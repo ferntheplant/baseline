@@ -18,8 +18,24 @@ and delete the git history.
 | [`AGENTS.md`](./AGENTS.md)                               | Agent instructions, with `CLAUDE.md` symlinked to it                                                     |
 | [`.agents/skills/`](./.agents/skills/)                   | `grilling`, `code-review`, `codebase-design`, with `.claude/` symlinked to `.agents/`                    |
 
-`vp config` runs from `prepare` on install, so the git hooks install themselves on first
-`vp install`.
+`prepare` runs on install, so the git hooks install themselves and the agent symlinks repair
+themselves on the first `vp install`.
+
+## Generating a project from it
+
+Any of these work:
+
+```bash
+gh repo create <name> --template ferntheplant/baseline --private --clone
+vp create github:ferntheplant/baseline
+git clone https://github.com/ferntheplant/baseline.git <name> && rm -rf <name>/.git
+```
+
+The `gh` and `git` routes copy the tree as-is. `vp create` extracts with degit, which rewrites
+relative symlinks into absolute paths inside a cache directory it then deletes — `CLAUDE.md`
+and `.claude/` arrive dangling. [`scripts/link-agents.mjs`](./scripts/link-agents.mjs) runs
+from `prepare` and puts them back, so the difference does not survive the first install. The
+same repair covers "Download ZIP", which drops symlinks entirely.
 
 ## Starting a repo from it
 
@@ -32,7 +48,7 @@ and delete the git history.
 4. Rewrite [`AGENTS.md`](./AGENTS.md) above the **House rules** section: what this project is,
    and where its documentation lives. Delete table rows that point at files you do not have.
 5. Replace this README.
-6. Configure the two GitHub settings below — they cannot be committed.
+6. Configure the GitHub settings below — they cannot be committed.
 
 ## Daily commands
 
@@ -45,8 +61,19 @@ vp exec fallow     # dead code, duplication, complexity
 
 ## Manual GitHub settings
 
-Two things live in repository settings rather than in this repo, so they have to be set once
-per repo after publishing.
+These live in repository settings rather than in this repo, so they have to be set once per
+repo after publishing.
+
+### 0. On this template repo only: mark it as a template
+
+**Settings → General → Template repository**, or:
+
+```bash
+gh repo edit ferntheplant/baseline --template
+```
+
+Without it there is no **Use this template** button and `gh repo create --template` fails. The
+`vp create` and `git clone` routes work either way.
 
 ### 1. Protect `main` with a ruleset
 

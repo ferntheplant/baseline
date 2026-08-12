@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "ready": "vp check && vp run -r test && vp run -r build",
-    "prepare": "vp config"
+    "prepare": "node scripts/link-agents.mjs && vp config"
   },
   "devDependencies": {
     "@commitlint/cli": "catalog:",

@@ -7,7 +7,7 @@
     // Scripts invoked by the Vite Task runner (`command: "node scripts/smoke.ts"`) are never
     // imported, so they need an explicit entry root to stay reachable.
     "apps/*/scripts/*.ts",
-    "scripts/*.ts"
+    "scripts/*.{ts,mjs}"
   ],
   "dynamicallyLoaded": [
     // Files loaded at runtime with no static import: child-process spawns, filesystem-loaded
