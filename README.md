@@ -23,31 +23,37 @@ themselves on the first `vp install`.
 
 ## Generating a project from it
 
-Any of these work:
-
 ```bash
-gh repo create <name> --template ferntheplant/baseline --private --clone
-vp create github:ferntheplant/baseline
-git clone https://github.com/ferntheplant/baseline.git <name> && rm -rf <name>/.git
+vp create github:ferntheplant/baseline --git
+mv baseline <name>
 ```
 
-The `gh` and `git` routes copy the tree as-is. `vp create` extracts with degit, which rewrites
-relative symlinks into absolute paths inside a cache directory it then deletes — `CLAUDE.md`
-and `.claude/` arrive dangling. [`scripts/link-agents.mjs`](./scripts/link-agents.mjs) runs
-from `prepare` and puts them back, so the difference does not survive the first install. The
-same repair covers "Download ZIP", which drops symlinks entirely.
+That leaves a fresh repo on `main` with no commits, no template history, dependencies
+installed, and the commit hooks configured. `vp create` has no say over the output directory
+for a remote template — `--directory` is rejected for anything but builtin templates, so the
+folder always lands as `baseline/` and gets renamed afterwards.
 
-## Starting a repo from it
+`git clone https://github.com/ferntheplant/baseline.git <name>` works too, if you would rather
+pick the directory name and delete `.git` yourself.
 
-1. `vp install`
-2. Rename the root package: `@baseline/root` → `@<yourname>/root` in `package.json`.
-3. Rename or replace `apps/example`. It exists because `vp run ready` fans out to every
+One thing to know about the `vp create` route: it extracts with degit, which rewrites relative
+symlinks into absolute paths inside a cache directory it then deletes, so `CLAUDE.md` and
+`.claude/` arrive dangling. [`scripts/link-agents.mjs`](./scripts/link-agents.mjs) runs from
+`prepare` and puts them back before you ever see them. The same repair covers "Download ZIP",
+which drops symlinks entirely. Nothing to do by hand — but if agent instructions ever go
+missing in a generated repo, that is where to look.
+
+## Then, in the new repo
+
+1. Rename the root package: `@baseline/root` → `@<yourname>/root` in `package.json`.
+2. Rename or replace `apps/example`. It exists because `vp run ready` fans out to every
    package's `test` and `build` scripts, and a workspace with no packages has neither task to
    plan — `vp run -r test` fails with `Task "test" not found`. Keep at least one package with
    both scripts, and the gate stays honest.
-4. Rewrite [`AGENTS.md`](./AGENTS.md) above the **House rules** section: what this project is,
+3. Rewrite [`AGENTS.md`](./AGENTS.md) above the **House rules** section: what this project is,
    and where its documentation lives. Delete table rows that point at files you do not have.
-5. Replace this README.
+4. Replace this README.
+5. `vp run ready`, then make the first commit and push it to a new GitHub repo.
 6. Configure the GitHub settings below — they cannot be committed.
 
 ## Daily commands
@@ -61,19 +67,8 @@ vp exec fallow     # dead code, duplication, complexity
 
 ## Manual GitHub settings
 
-These live in repository settings rather than in this repo, so they have to be set once per
-repo after publishing.
-
-### 0. On this template repo only: mark it as a template
-
-**Settings → General → Template repository**, or:
-
-```bash
-gh repo edit ferntheplant/baseline --template
-```
-
-Without it there is no **Use this template** button and `gh repo create --template` fails. The
-`vp create` and `git clone` routes work either way.
+Two things live in repository settings rather than in this repo, so they have to be set once
+per repo after publishing.
 
 ### 1. Protect `main` with a ruleset
 
