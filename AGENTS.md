@@ -51,7 +51,8 @@ new term means a `CONTEXT.md` entry.
   standards and its spec.
 
 `.claude/` is a symlink to `.agents/`, and `CLAUDE.md` is a symlink to this file, so every
-agent reads one set of instructions.
+agent reads one set of instructions. `CLAUDE.md` is gitignored and created on install by
+[`scripts/link-agents.mjs`](./scripts/link-agents.mjs) — the file's own header says why.
 
 <!--VITE PLUS START-->
 

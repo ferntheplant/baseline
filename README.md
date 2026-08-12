@@ -24,24 +24,32 @@ themselves on the first `vp install`.
 ## Generating a project from it
 
 ```bash
-vp create github:ferntheplant/baseline --git
-mv baseline <name>
+vp create github:ferntheplant/baseline
 ```
 
-That leaves a fresh repo on `main` with no commits, no template history, dependencies
-installed, and the commit hooks configured. `vp create` has no say over the output directory
-for a remote template — `--directory` is rejected for anything but builtin templates, so the
-folder always lands as `baseline/` and gets renamed afterwards.
+Answer the prompts — the first one is the target directory, so the new project is named there
+and needs no renaming afterwards. Any answer to the agent-instructions and hooks prompts is
+fine. That leaves a fresh repo on `main` with no commits, no template history, dependencies
+installed, and the commit hooks configured.
+
+Non-interactively (`--no-interactive`), pass `--git` for the repo and expect the directory to
+be named after the template, since `--directory` is rejected for remote templates:
+
+```bash
+vp create github:ferntheplant/baseline --git --no-interactive && mv baseline <name>
+```
 
 `git clone https://github.com/ferntheplant/baseline.git <name>` works too, if you would rather
-pick the directory name and delete `.git` yourself.
+delete `.git` yourself.
 
-One thing to know about the `vp create` route: it extracts with degit, which rewrites relative
-symlinks into absolute paths inside a cache directory it then deletes, so `CLAUDE.md` and
-`.claude/` arrive dangling. [`scripts/link-agents.mjs`](./scripts/link-agents.mjs) runs from
-`prepare` and puts them back before you ever see them. The same repair covers "Download ZIP",
-which drops symlinks entirely. Nothing to do by hand — but if agent instructions ever go
-missing in a generated repo, that is where to look.
+Two things about the `vp create` route are worth knowing, both handled by
+[`scripts/link-agents.mjs`](./scripts/link-agents.mjs) running from `prepare`. It extracts with
+degit, which rewrites relative symlinks into absolute paths inside a cache directory it then
+deletes, so `.claude/` arrives dangling; the same is true of "Download ZIP", which drops
+symlinks entirely. And `vp create` writes agent instruction files itself before installing,
+which is why `CLAUDE.md` is gitignored here rather than committed — see the script's header.
+Nothing to do by hand, but if agent instructions ever go missing in a generated repo, that is
+where to look.
 
 ## Then, in the new repo
 

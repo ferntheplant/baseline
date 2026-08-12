@@ -1,12 +1,18 @@
 // `CLAUDE.md` and `.claude/` are relative symlinks so every agent reads one set of
-// instructions. `git clone` and GitHub's "Use this template" preserve them; two common paths
-// do not. `vp create github:<repo>` extracts with degit, which rewrites a relative symlink
-// into an absolute path inside its own cache — and then deletes that cache, leaving both links
-// dangling. "Download ZIP" drops symlinks entirely.
+// instructions. Two things stop them from simply being committed and left alone:
 //
-// Running from `prepare` makes every generation path converge on the same two links. This
-// never replaces a real file or directory: a repo that deliberately keeps its own `.claude/`
-// is left alone and told so. Failure to link is reported, never thrown — a broken symlink is
+//   - `vp create github:<repo>` extracts with degit, which rewrites a relative symlink into an
+//     absolute path inside its own cache — then deletes that cache, leaving the link dangling.
+//     "Download ZIP" drops symlinks entirely. `git clone` preserves them.
+//   - `vp create` writes agent instruction files itself, and does it *before* installing. It
+//     will not write around a `CLAUDE.md` that already exists: it dies with EEXIST when it
+//     wants to create the symlink, or ENOENT when the one it finds is degit-broken. So
+//     `CLAUDE.md` is gitignored, and this script is what puts it there.
+//
+// Running from `prepare` makes every generation path converge on the same two links, whether
+// `vp create` made them, degit broke them, or nothing created them at all. This never replaces
+// a real file or directory: a repo that deliberately keeps its own `CLAUDE.md` or `.claude/` is
+// left alone and told so. Failure to link is reported, never thrown — a missing symlink is
 // worth a warning, not a failed install.
 
 import { lstatSync, readlinkSync, symlinkSync, unlinkSync } from "node:fs";
