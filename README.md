@@ -28,8 +28,12 @@ vp create github:ferntheplant/baseline
 ```
 
 Answer the prompts — the first one is the target directory, so the new project is named there
-and needs no renaming afterwards. Any answer to the agent-instructions and hooks prompts is
-fine. That leaves a fresh repo on `main` with no commits, no template history, dependencies
+and needs no renaming afterwards. Take the default on **Which coding agent instruction files**
+(`AGENTS.md, CLAUDE.md`) or answer none; both give you `CLAUDE.md` symlinked to `AGENTS.md`.
+Selecting `CLAUDE.md` alone is the one answer to avoid — Vite+ then writes a real `CLAUDE.md`
+holding only its own boilerplate, and this repo's house rules never reach Claude Code.
+
+That leaves a fresh repo on `main` with no commits, no template history, dependencies
 installed, and the commit hooks configured.
 
 Non-interactively (`--no-interactive`), pass `--git` for the repo and expect the directory to

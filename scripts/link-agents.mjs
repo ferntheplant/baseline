@@ -42,7 +42,12 @@ for (const { link, target, type } of LINKS) {
     if (readlinkSync(path) === target) continue;
     unlinkSync(path);
   } else if (existing) {
-    report(`${link} is a real ${existing.isDirectory() ? "directory" : "file"}, leaving it alone`);
+    // Answering the `vp create` agent prompt with CLAUDE.md but not AGENTS.md lands here: it
+    // writes a real file holding only the Vite+ block, so the house rules in AGENTS.md never
+    // reach Claude Code. Deleting someone's real instructions to force a symlink is worse than
+    // saying so, hence the remedy rather than a clobber.
+    const kind = existing.isDirectory() ? "directory" : "file";
+    report(`${link} is a real ${kind}, leaving it alone — delete it and reinstall to link it to ${target}`);
     continue;
   }
 
