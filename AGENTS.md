@@ -23,6 +23,11 @@ Delete the rows this repo does not have yet rather than leaving dangling links.
 - **`vp run ready` is the gate.** It runs `vp check` (format, lint, type-check), then every
   package's `test`, then every package's `build`. A change is not done until it passes from a
   clean checkout.
+- **Gate commands live in `package.json`, not in `run.tasks`.** `vp run` reads both, and
+  `run.cache: true` already caches scripts, so a task wrapper adds only `dependsOn`/`env`/
+  `input` control — nothing a linear `check → test → build` chain needs. Scripts stay visible
+  to pnpm, CI, and editors, and a task name can live in only one place. Define a
+  `vite.config.ts` task when it needs cross-package ordering or env-sensitive caching.
 - **Absolute imports across modules.** `../**` is a lint error; sibling imports are fine.
 - **No `any`, no non-null assertions, no floating promises.** These are lint errors, not
   preferences. If a rule seems wrong for this repo, change it in
