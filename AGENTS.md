@@ -30,7 +30,7 @@ Delete the rows this repo does not have yet rather than leaving dangling links.
 - **Dependencies come from the catalog.** Shared versions live in
   [`pnpm-workspace.yaml`](./pnpm-workspace.yaml); packages depend on `catalog:`.
 - **Dead code gets deleted.** `vp exec fallow` reports what nothing reaches. A file that is
-  only reachable at runtime belongs in `.fallowrc.json`; everything else it flags is real.
+  only reachable at runtime belongs in `fallow.toml`; everything else it flags is real.
 
 ## Definition of done
 

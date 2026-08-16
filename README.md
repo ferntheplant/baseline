@@ -13,7 +13,7 @@ and delete the git history.
 | [`pnpm-workspace.yaml`](./pnpm-workspace.yaml)           | Workspace globs and the dependency catalog                                                               |
 | [`commitlint.config.ts`](./commitlint.config.ts)         | Conventional Commits, with the allowed type list                                                         |
 | [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) | `vp run ready`, commit-message lint, and PR-title lint on every PR                                       |
-| [`.fallowrc.json`](./.fallowrc.json)                     | Dead-code, duplication, and complexity analysis                                                          |
+| [`fallow.toml`](./fallow.toml)                           | Dead-code, duplication, and complexity analysis                                                          |
 | [`.vite-hooks/`](./.vite-hooks/)                         | `pre-commit` → `vp staged`, `commit-msg` → commitlint                                                    |
 | [`AGENTS.md`](./AGENTS.md)                               | Agent instructions, with `CLAUDE.md` symlinked to it                                                     |
 | [`.agents/skills/`](./.agents/skills/)                   | `grilling`, `code-review`, `codebase-design`, with `.claude/` symlinked to `.agents/`                    |
