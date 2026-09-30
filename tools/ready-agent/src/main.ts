@@ -14,11 +14,12 @@ const env = { ...process.env, NO_COLOR: "1", FORCE_COLOR: "0" };
 const vp = (args: string[]): RunResult =>
   toRunResult(args, spawnSync("vp", args, { env, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
 
-const gate = vp(["run", "--log", "grouped", "ready"]);
+// `-v` appends the per-step ✓/✗ summary to this run's own output, which `condense` reads.
+const gate = vp(["run", "-v", "--log", "grouped", "ready"]);
 
 if (gate.status === 0) {
   process.stdout.write("ready: ok\n");
 } else {
-  process.stdout.write(`${condense(gate.output, vp(["run", "--last-details"]).output)}\n`);
+  process.stdout.write(`${condense(gate.output)}\n`);
 }
 process.exitCode = gate.status;

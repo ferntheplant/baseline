@@ -1,4 +1,4 @@
-// Turns the output of a failed `vp run --log grouped ready` into only what an agent needs:
+// Turns the output of a failed `vp run -v --log grouped ready` into only what an agent needs:
 // the output of each step that failed, trimmed. Pure, so the parsing can be tested against
 // captured output; `main.ts` does the running.
 //
@@ -7,27 +7,29 @@
 // (`vp run -r test`) print their headers back to back and their blocks in finishing order, so
 // a block belongs to the step its separator names, not to whichever header came last.
 //
-// Which steps failed comes from `vp run --last-details`, one `[n] pkg#task: $ command ✓|✗`
-// line per step, also in finishing order.
+// Which steps failed comes from the summary `-v` prints after the step output: one
+// `[n] pkg#task: $ command ✓|✗` line per step, also in finishing order. It is read from this
+// run's own output, never from `vp run --last-details`, which reports whichever run in the
+// checkout finished last and so mixes up concurrent gates.
 
 const MAX_LINES = 120;
 const FALLBACK_LINES = 40;
 
 type Step = { key: string; command: string; lines: string[] };
-type Outcome = { key: string; command: string; failed: boolean };
+type Outcome = { key: string; command: string; failed: boolean; exitCode: number | undefined };
 
 // `[@baseline/root#ready] $ vp check ○ cache miss: …` → key `@baseline/root#ready`, command
 // `$ vp check`: the cache note after ◉/○/⊘ is dropped so the command compares exactly with the
-// one `--last-details` prints. A package step's command carries its directory: `~/apps/x$ …`.
+// one the summary prints. A package step's command carries its directory: `~/apps/x$ …`.
 const HEADER = /^\[([^\]\s]+#[^\]\s]+)\] (.*?\$ .*?)(?: [◉○⊘] .*)?$/;
 const SEPARATOR = /^── \[([^\]\s]+#[^\]\s]+)\] ──$/;
 
-const splitSteps = (output: string): Step[] => {
+// `-v` opens its summary with a rule and this title; everything before it is step output.
+const SUMMARY = /^━+\n\s*Vite\+ Task Runner • Execution Summary$/m;
+
+const splitSteps = (body: string): Step[] => {
   const steps: Step[] = [];
   let current: Step | undefined;
-  // `vp run` closes with its own `---` / `vp run: 1/3 cache hit …` footer, which belongs to no
-  // step; stop there rather than fold it into the last one.
-  const [body = ""] = output.split(/^---\nvp run: /m);
   for (const line of body.split("\n")) {
     const header = HEADER.exec(line);
     const separator = SEPARATOR.exec(line);
@@ -46,13 +48,19 @@ const splitSteps = (output: string): Step[] => {
 };
 
 // `  [3] @baseline/root#ready: $ vp check ✗ (exit code: 1)` → key, command, and outcome.
-const OUTCOME = /^\s*\[\d+\] (\S+#\S+): (.*\$ .*?) ([✓✗])/;
+const OUTCOME = /^\s*\[\d+\] (\S+#\S+): (.*\$ .*?) ([✓✗])(?: \(exit code: (\d+)\))?/;
 
-const outcomes = (details: string): Outcome[] =>
-  details.split("\n").flatMap((line) => {
+const outcomes = (summary: string): Outcome[] =>
+  summary.split("\n").flatMap((line) => {
     const match = OUTCOME.exec(line);
-    return match?.[1] && match[2] ? [{ key: match[1], command: match[2], failed: match[3] === "✗" }] : [];
+    if (!match?.[1] || !match[2]) return [];
+    const exitCode = match[4] === undefined ? undefined : Number(match[4]);
+    return [{ key: match[1], command: match[2], failed: match[3] === "✗", exitCode }];
   });
+
+// When one step fails, vp kills the steps still running beside it: they report ✗ with a signal
+// exit (137 for SIGKILL, 143 for SIGTERM) even when their own work had passed.
+const killed = (outcome: Outcome): boolean => outcome.exitCode === 137 || outcome.exitCode === 143;
 
 // Pair each outcome with its step. Both lists are in a different order (starting vs finishing),
 // but steps sharing a key and command run one after another, so the nth outcome for a given
@@ -74,8 +82,13 @@ export const trim = (lines: string[], max = MAX_LINES): string[] => {
   return [...kept.slice(0, head), `… ${kept.length - max} lines omitted …`, ...kept.slice(head - max)];
 };
 
-export const condense = (gateOutput: string, details: string): string => {
-  const failures = failedSteps(splitSteps(gateOutput), outcomes(details));
+export const condense = (gateOutput: string): string => {
+  const [body = "", summary = ""] = gateOutput.split(SUMMARY);
+  const all = failedSteps(splitSteps(body), outcomes(summary));
+  // Report killed steps as failures only when nothing else failed: then the kill was the cause
+  // (out of memory, a timeout), not a side effect of another step's failure.
+  const failures = all.some(({ outcome }) => !killed(outcome)) ? all.filter(({ outcome }) => !killed(outcome)) : all;
+  const stopped = all.filter((entry) => !failures.includes(entry));
 
   if (failures.length === 0 || failures.some(({ step }) => step === undefined)) {
     // Failed before any step ran (a config error, a missing tool), or the output format moved
@@ -83,7 +96,11 @@ export const condense = (gateOutput: string, details: string): string => {
     return ["ready: failed", ...trim(gateOutput.split("\n")).slice(-FALLBACK_LINES)].join("\n");
   }
 
-  return failures
-    .flatMap(({ outcome, step }) => [`ready: failed at ${outcome.key}: ${outcome.command}`, ...trim(step?.lines ?? [])])
-    .join("\n");
+  return [
+    ...failures.flatMap(({ outcome, step }) => [
+      `ready: failed at ${outcome.key}: ${outcome.command}`,
+      ...trim(step?.lines ?? []),
+    ]),
+    ...stopped.map(({ outcome }) => `ready: stopped early, result unknown: ${outcome.key}: ${outcome.command}`),
+  ].join("\n");
 };
