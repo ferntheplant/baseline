@@ -99,7 +99,7 @@ CI runs `vp run ready` in full, so every check in the gate runs there too. The g
 
 ## Manual GitHub settings
 
-Two things live in repository settings rather than in this repo, so they have to be set once per repo after publishing.
+Three things live in repository settings rather than in this repo, so they have to be set once per repo after publishing.
 
 ### 1. Protect `main` with a ruleset
 
@@ -127,4 +127,15 @@ Or with the `gh` CLI, from a clone of the repo:
 gh repo edit --delete-branch-on-merge
 ```
 
-While you are there, restricting merges to **Squash merging** keeps the linear history the ruleset requires — and squash merges take the PR title as the commit subject, which is why CI lints that title.
+### 3. Squash-merge only, with the PR's title and description
+
+**Settings → General → Pull Requests**: uncheck **Allow merge commits** and **Allow rebase merging**, and under **Allow squash merging** set the default commit message to **Pull request title and description**.
+
+Or with the `gh` CLI:
+
+```bash
+gh repo edit --enable-merge-commit=false --enable-rebase-merge=false
+gh api -X PATCH "repos/{owner}/{repo}" -f squash_merge_commit_title=PR_TITLE -f squash_merge_commit_message=PR_BODY
+```
+
+Squash-only merging keeps the linear history the ruleset requires. The squash commit takes the PR title as its subject, which is why CI lints that title, and the PR description as its body, so the description is what `main`'s history records about the change.
