@@ -14,7 +14,7 @@ New writing goes to one of those homes from the start, and **nothing lives in tw
 ## House rules
 
 - **Conventional Commits, always.** The allowed types are in [`commitlint.config.ts`](./commitlint.config.ts); CI checks every commit on a PR and the PR title, because a squash merge takes the title as the subject.
-- **`vp run ready` is the gate.** The `ready` script in [`package.json`](./package.json) is the list of what it runs; the README's _What runs where_ table says what pre-commit and CI add around it. A change is not done until it passes from a clean checkout. Run it as `vp run ready:agent`: the same gate, printing `ready: ok` or only the output of the steps that failed. A step whose output runs long is trimmed, and the `lines omitted` marker names a file holding the full output; read it when the trimmed part matters.
+- **`vp run ready:agent` is the gate.** It runs the checks listed in the `ready` script in [`package.json`](./package.json) and prints `ready: ok`, or only the output of the steps that failed. A step whose output runs long is trimmed, and when the full output could be saved, the `lines omitted` marker names the file holding it; read it when the trimmed part matters. The README's _What runs where_ table says what the git hooks and CI add around the gate. A change is not done until it passes from a clean checkout.
 - **Gate commands live in `package.json`, not in `run.tasks`.** `vp run` reads both, and `run.cache: true` already caches scripts, so a task wrapper adds only `dependsOn` and per-task `cache.env`/`cache.input` control — nothing a linear `check → test → build` chain needs. Scripts stay visible to pnpm, CI, and editors, and a task name can live in only one place. Define a `vite.config.ts` task when it needs cross-package ordering, env-sensitive caching, or no caching at all (`ready:agent`, whose comment says why).
 - **Absolute imports across modules.** `../**` is a lint error; sibling imports are fine.
 - **No `any`, no non-null assertions, no floating promises.** These are lint errors, not preferences. If a rule seems wrong for this repo, change it in [`vite.config.ts`](./vite.config.ts) with a comment saying why — do not suppress it inline.
@@ -25,7 +25,7 @@ New writing goes to one of those homes from the start, and **nothing lives in tw
 
 ## Definition of done
 
-A change is done when its production path is reachable through a real entrypoint; success and expected failure are tested; `vp run ready` passes from a clean checkout; and the documentation is updated where implementation invalidated an assumption — a new term means a `CONTEXT.md` entry, and a change in what the project is or is not means an `ABSTRACT.md` edit.
+A change is done when its production path is reachable through a real entrypoint; success and expected failure are tested; `vp run ready:agent` passes from a clean checkout; and the documentation is updated where implementation invalidated an assumption — a new term means a `CONTEXT.md` entry, and a change in what the project is or is not means an `ABSTRACT.md` edit.
 
 ## Skills
 
