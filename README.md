@@ -12,15 +12,30 @@ and delete the git history.
 | [`tsconfig.json`](./tsconfig.json)                           | Strict TypeScript, bundler resolution, no implicit `any`, no unchecked index access                      |
 | [`pnpm-workspace.yaml`](./pnpm-workspace.yaml)               | Workspace globs and the dependency catalog                                                               |
 | [`commitlint.config.ts`](./commitlint.config.ts)             | Conventional Commits, with the allowed type list                                                         |
-| [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)     | `vp run ready`, commit-message lint, and PR-title lint on every PR                                       |
+| [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)     | `vp run ready`, a gitleaks history scan, commit-message lint, and PR-title lint on every PR              |
 | [`fallow.toml`](./fallow.toml)                               | Dead-code, duplication, and complexity analysis                                                          |
-| [`.vite-hooks/`](./.vite-hooks/)                             | `pre-commit` → `vp staged`, `commit-msg` → commitlint                                                    |
+| [`mise.toml`](./mise.toml)                                   | Node and gitleaks, installed by mise                                                                     |
+| [`.vite-hooks/`](./.vite-hooks/)                             | `pre-commit` → gitleaks + `vp staged`, `commit-msg` → commitlint                                         |
 | [`ABSTRACT.md`](./ABSTRACT.md), [`CONTEXT.md`](./CONTEXT.md) | What the project is, and what its words mean — empty, to fill in                                         |
 | [`AGENTS.md`](./AGENTS.md)                                   | Agent instructions, with `CLAUDE.md` symlinked to it                                                     |
 | [`.agents/skills/`](./.agents/skills/)                       | Agent skills, with `.claude/` symlinked to `.agents/`                                                    |
 
 `prepare` runs on install, so the git hooks install themselves and the agent symlinks repair
 themselves on the first `vp install`.
+
+## Prerequisites
+
+Install [Vite+](https://viteplus.dev/guide/) and [mise](https://mise.jdx.dev/getting-started.html),
+then hand Node to mise, once per machine:
+
+```bash
+vp env off node
+```
+
+[`mise.toml`](./mise.toml) pins Node and gitleaks, and mise installs them. Vite+ manages Node
+too by default, and two tools managing one runtime can download it twice or pick different
+versions for different commands. With Node switched off, Vite+ uses the Node that mise
+provides and still manages pnpm from `devEngines` in `package.json`.
 
 ## Generating a project from it
 
@@ -33,6 +48,9 @@ and needs no renaming afterwards. Take the default on **Which coding agent instr
 (`AGENTS.md, CLAUDE.md`) or answer none; both give you `CLAUDE.md` symlinked to `AGENTS.md`.
 Selecting `CLAUDE.md` alone is the one answer to avoid — Vite+ then writes a real `CLAUDE.md`
 holding only its own boilerplate, and this repo's house rules never reach Claude Code.
+
+Then run `mise trust && mise install` in the new directory; the pre-commit hook refuses to
+commit until gitleaks is installed.
 
 That leaves a fresh repo on `main` with no commits, no template history, dependencies
 installed, and the commit hooks configured.

@@ -1,0 +1,6 @@
+# Tools Vite+ does not provide. Node lives here rather than in Vite+'s managed runtime so one
+# tool owns it: run `vp env off node` once per machine and Vite+ uses this Node, while still
+# managing pnpm from `devEngines` in package.json. Keep `node` inside `engines.node`.
+[tools]
+node = "24"
+gitleaks = "8"

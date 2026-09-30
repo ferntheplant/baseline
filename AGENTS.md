@@ -33,6 +33,9 @@ New writing goes to one of those homes from the start, and **nothing lives in tw
   [`vite.config.ts`](./vite.config.ts) with a comment saying why — do not suppress it inline.
 - **Dependencies come from the catalog.** Shared versions live in
   [`pnpm-workspace.yaml`](./pnpm-workspace.yaml); packages depend on `catalog:`.
+- **Secrets never reach git.** gitleaks scans staged changes on pre-commit and every commit in
+  CI. A false positive goes in `.gitleaksignore` by fingerprint, so the exception is reviewed
+  like any other change.
 - **Dead code gets deleted.** `vp exec fallow` reports what nothing reaches, and an unused
   file, export, or dependency fails the gate. A file that is only reachable at runtime belongs
   in `fallow.toml`; everything else it flags is real.

@@ -27,6 +27,17 @@ jobs:
           # default clone is not enough.
           fetch-depth: 0
 
+      # Only gitleaks: setup-vp below provides Node, so mise's `node` entry is not installed here.
+      - name: Set up gitleaks
+        uses: jdx/mise-action@v5
+        with:
+          install_args: gitleaks
+
+      # The pre-commit hook scans staged changes; this scans every commit, so a leak from a
+      # clone without hooks, or one committed with --no-verify, still fails the PR.
+      - name: Scan for secrets
+        run: gitleaks git --redact --no-banner
+
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@v1
         with:
