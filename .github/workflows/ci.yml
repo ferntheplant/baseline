@@ -10,9 +10,10 @@ permissions:
   contents: read
 
 # A new push to a PR supersedes the run already in flight for it. Pushes to main are keyed by
-# commit instead, so every commit that lands there gets a complete run.
+# commit instead, so every commit that lands there gets a complete run. The workflow name keeps
+# a second workflow from cancelling this one's runs.
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.sha }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -33,15 +34,13 @@ jobs:
         with:
           install_args: gitleaks typos
 
-      # The pre-commit hook scans staged changes; this scans every commit, so a leak from a
-      # clone without hooks, or one committed with --no-verify, still fails the PR.
       - name: Scan for secrets
         run: gitleaks git --redact --no-banner
 
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@v1
         with:
-          node-version: "24"
+          node-version-file: .node-version
           cache: true
 
       - name: Install dependencies
