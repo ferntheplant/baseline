@@ -4,18 +4,15 @@
 // what the gate runs, and every step keeps its cache.
 
 import { spawnSync } from "node:child_process";
-import { stripVTControlCharacters } from "node:util";
 
 import { condense } from "./condense.ts";
+import { type RunResult, toRunResult } from "./run-result.ts";
 
-// Colour codes waste tokens and break the header matching; strip whatever a tool emits despite
-// being asked not to.
+// Ask tools not to colour their output; `toRunResult` strips whatever they emit anyway.
 const env = { ...process.env, NO_COLOR: "1", FORCE_COLOR: "0" };
 
-const vp = (args: string[]): { status: number; output: string } => {
-  const result = spawnSync("vp", args, { env, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
-  return { status: result.status ?? 1, output: stripVTControlCharacters(`${result.stdout}${result.stderr}`) };
-};
+const vp = (args: string[]): RunResult =>
+  toRunResult(args, spawnSync("vp", args, { env, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }));
 
 const gate = vp(["run", "--log", "grouped", "ready"]);
 

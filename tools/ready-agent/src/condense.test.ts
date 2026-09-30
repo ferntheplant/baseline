@@ -1,6 +1,10 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, test } from "vite-plus/test";
 
 import { condense, trim } from "./condense.ts";
+
+const fixture = (name: string): string => readFileSync(new URL(`fixtures/${name}`, import.meta.url), "utf8");
 
 // Shapes copied from real `vp run --log grouped ready` and `vp run --last-details` output.
 const gate = `[@baseline/root#ready] $ sherif ◉ cache hit, replaying
@@ -38,20 +42,46 @@ describe("condense", () => {
     expect(out).not.toContain("vp run: ");
   });
 
-  test("picks the failed package when parallel steps share a script name", () => {
-    const parallel = `[@x/a#test] ~/apps/a$ vp test run ○ cache miss, executing
-── [@x/a#test] ──
-a failure
-[@x/b#test] ~/apps/b$ vp test run ○ cache miss, executing
-── [@x/b#test] ──
-b passed`;
-    const parallelDetails = `  [1] @x/a#test: ~/apps/a$ vp test run ✗ (exit code: 1)
-  [2] @x/b#test: ~/apps/b$ vp test run ✓`;
+  // Captured from a real run: example's test failed while ready-agent's passed. Both headers
+  // print before either block, and the blocks arrive in finishing order.
+  test("files parallel output under the step its separator names", () => {
+    const out = condense(fixture("parallel-test-failure.log"), fixture("parallel-test-failure.details"));
 
-    const out = condense(parallel, parallelDetails);
+    expect(out.split("\n")[0]).toBe(
+      "ready: failed at @baseline/example#test: ~/apps/example$ vp test run --reporter=minimal",
+    );
+    expect(out).toContain("AssertionError: expected 'Hello, world!' to be 'Hello, moon!'");
+    expect(out).not.toContain("Tests  5 passed");
+  });
 
-    expect(out).toContain("a failure");
-    expect(out).not.toContain("b passed");
+  test("matches a failed command exactly, not by prefix", () => {
+    const out = condense(
+      `[@x/a#ready] $ vp build:x ◉ cache hit, replaying
+── [@x/a#ready] ──
+build:x ok
+[@x/a#ready] $ vp build ○ cache miss, executing
+── [@x/a#ready] ──
+build broke`,
+      `  [1] @x/a#ready: $ vp build:x ✓
+  [2] @x/a#ready: $ vp build ✗ (exit code: 1)`,
+    );
+
+    expect(out).toBe("ready: failed at @x/a#ready: $ vp build\nbuild broke");
+  });
+
+  test("pairs a repeated command with the run that failed", () => {
+    const out = condense(
+      `[@x/a#ready] $ vp check ○ cache miss, executing
+── [@x/a#ready] ──
+first run clean
+[@x/a#ready] $ vp check ○ cache miss, executing
+── [@x/a#ready] ──
+second run broke`,
+      `  [1] @x/a#ready: $ vp check ✓
+  [2] @x/a#ready: $ vp check ✗ (exit code: 1)`,
+    );
+
+    expect(out).toBe("ready: failed at @x/a#ready: $ vp check\nsecond run broke");
   });
 
   test("falls back to the end of the raw output when no step is marked failed", () => {
