@@ -14,6 +14,7 @@ and delete the git history.
 | [`commitlint.config.ts`](./commitlint.config.ts)             | Conventional Commits, with the allowed type list                                                         |
 | [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)     | `vp run ready`, a gitleaks history scan, commit-message lint, and PR-title lint on every PR              |
 | [`fallow.toml`](./fallow.toml)                               | Dead-code, duplication, and complexity analysis                                                          |
+| `sherif` in [`package.json`](./package.json)                 | Monorepo `package.json` lint: consistent versions, private root, no empty fields                         |
 | [`mise.toml`](./mise.toml)                                   | Node and gitleaks, installed by mise                                                                     |
 | [`.vite-hooks/`](./.vite-hooks/)                             | `pre-commit` → gitleaks + `vp staged`, `commit-msg` → commitlint                                         |
 | [`ABSTRACT.md`](./ABSTRACT.md), [`CONTEXT.md`](./CONTEXT.md) | What the project is, and what its words mean — empty, to fill in                                         |
@@ -91,7 +92,7 @@ where to look.
 ## Daily commands
 
 ```bash
-vp run ready       # the gate: check, then every package's test and build, then fallow
+vp run ready       # the gate: sherif, check, every package's test and build, then fallow
 vp check --fix     # format + autofix lint
 vp test            # run tests
 vp exec fallow     # dead code, duplication, complexity

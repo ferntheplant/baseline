@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "ready": "vp check && vp run -r test && vp run -r build && vp exec fallow",
+    "ready": "sherif && vp check && vp run -r test && vp run -r build && vp exec fallow",
     "prepare": "node scripts/link-agents.mjs && vp config"
   },
   "devDependencies": {
@@ -12,6 +12,7 @@
     "@commitlint/config-conventional": "catalog:",
     "@types/node": "catalog:",
     "fallow": "catalog:",
+    "sherif": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plus": "catalog:"
@@ -25,5 +26,11 @@
   },
   "engines": {
     "node": ">=24.11.0"
+  },
+  "sherif": {
+    "failOnWarnings": true,
+    "ignoreRule": [
+      "non-existant-packages"
+    ]
   }
 }

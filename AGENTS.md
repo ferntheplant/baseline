@@ -18,9 +18,9 @@ New writing goes to one of those homes from the start, and **nothing lives in tw
 - **Conventional Commits, always.** The allowed types are in
   [`commitlint.config.ts`](./commitlint.config.ts); CI checks every commit on a PR and the PR
   title, because a squash merge takes the title as the subject.
-- **`vp run ready` is the gate.** It runs `vp check` (format, lint, type-check), then every
-  package's `test`, then every package's `build`, then `fallow`. A change is not done until it
-  passes from a clean checkout.
+- **`vp run ready` is the gate.** It runs `sherif` (workspace `package.json` lint), then
+  `vp check` (format, lint, type-check), then every package's `test`, then every package's
+  `build`, then `fallow`. A change is not done until it passes from a clean checkout.
 - **Gate commands live in `package.json`, not in `run.tasks`.** `vp run` reads both, and
   `run.cache: true` already caches scripts, so a task wrapper adds only `dependsOn` and
   per-task `cache.env`/`cache.input` control — nothing a linear `check → test → build` chain
@@ -32,7 +32,10 @@ New writing goes to one of those homes from the start, and **nothing lives in tw
   preferences. If a rule seems wrong for this repo, change it in
   [`vite.config.ts`](./vite.config.ts) with a comment saying why — do not suppress it inline.
 - **Dependencies come from the catalog.** Shared versions live in
-  [`pnpm-workspace.yaml`](./pnpm-workspace.yaml); packages depend on `catalog:`.
+  [`pnpm-workspace.yaml`](./pnpm-workspace.yaml); packages depend on `catalog:`. sherif fails
+  the gate on any warning; its config is the `sherif` key in the root `package.json`, which
+  ignores only `non-existant-packages`, because the template declares `packages/*` and
+  `tools/*` before anything lives there.
 - **Secrets never reach git.** gitleaks scans staged changes on pre-commit and every commit in
   CI. A false positive goes in `.gitleaksignore` by fingerprint, so the exception is reviewed
   like any other change.
