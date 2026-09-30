@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 
-import { condense, trim } from "./condense-ready.mjs";
+import { condense, trim } from "./condense.ts";
 
 // Shapes copied from real `vp run --log grouped ready` and `vp run --last-details` output.
 const gate = `[@baseline/root#ready] $ sherif ◉ cache hit, replaying

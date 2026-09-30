@@ -1,6 +1,6 @@
 // Turns the output of a failed `vp run --log grouped ready` into only what an agent needs:
 // the output of each step that failed, trimmed. Pure, so the parsing can be tested against
-// captured output; `ready-agent.mjs` does the running.
+// captured output; `main.ts` does the running.
 //
 // `--log grouped` prints each step's output as one block under a `[pkg#task] $ command`
 // header. Which blocks to keep comes from `vp run --last-details`, which marks each step ✓ or
@@ -10,19 +10,22 @@
 const MAX_LINES = 120;
 const FALLBACK_LINES = 40;
 
+type Step = { key: string; command: string; lines: string[] };
+type Failure = { key: string; command: string };
+
 // `[@baseline/root#ready] $ vp check ○ cache miss: …` → key `@baseline/root#ready`, command
 // `$ vp check ○ cache miss: …`. A package task's command carries its directory: `~/apps/x$ …`.
 const HEADER = /^\[([^\]\s]+#[^\]\s]+)\] (.*\$ .*)$/;
 const SEPARATOR = /^── \[.*\] ──$/;
 
-const splitSteps = (output) => {
-  const steps = [];
+const splitSteps = (output: string): Step[] => {
+  const steps: Step[] = [];
   // `vp run` closes with its own `---` / `vp run: 1/3 cache hit …` footer, which belongs to no
   // step; stop there rather than fold it into the last one.
   const [body = ""] = output.split(/^---\nvp run: /m);
   for (const line of body.split("\n")) {
     const header = HEADER.exec(line);
-    if (header) steps.push({ key: header[1], command: header[2], lines: [] });
+    if (header?.[1] && header[2]) steps.push({ key: header[1], command: header[2], lines: [] });
     else if (!SEPARATOR.test(line)) steps.at(-1)?.lines.push(line);
   }
   return steps;
@@ -31,21 +34,21 @@ const splitSteps = (output) => {
 // `  [3] @baseline/root#ready: $ vp check ✗ (exit code: 1)` → key and command before the ✗.
 const FAILED = /^\s*\[\d+\] (\S+#\S+): (.*\$ .*?) ✗/;
 
-const failedSteps = (details) =>
+const failedSteps = (details: string): Failure[] =>
   details.split("\n").flatMap((line) => {
     const match = FAILED.exec(line);
-    return match ? [{ key: match[1], command: match[2] }] : [];
+    return match?.[1] && match[2] ? [{ key: match[1], command: match[2] }] : [];
   });
 
 // Keep the head, where linters report, and the tail, where test runners summarise.
-export const trim = (lines, max = MAX_LINES) => {
+export const trim = (lines: string[], max = MAX_LINES): string[] => {
   const kept = lines.filter((line) => line.trim() !== "" && !line.startsWith("pass: "));
   if (kept.length <= max) return kept;
   const head = Math.floor(max * 0.7);
   return [...kept.slice(0, head), `… ${kept.length - max} lines omitted …`, ...kept.slice(head - max)];
 };
 
-export const condense = (gateOutput, details) => {
+export const condense = (gateOutput: string, details: string): string => {
   const steps = splitSteps(gateOutput);
   const blocks = failedSteps(details).map((failure) => ({
     failure,

@@ -88,7 +88,7 @@ export default defineConfig({
       // `cache: false`: the gate it wraps caches per step already, and under script caching the
       // runner's file tracking makes the nested `vp run` fail to spawn (os error 22).
       "ready:agent": {
-        command: "node scripts/ready-agent.mjs",
+        command: "node tools/ready-agent/src/main.ts",
         cache: false,
       },
     },

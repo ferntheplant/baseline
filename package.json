@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "ready": "sherif && typos && vp check && vp run -r test && vp run -r build && vp exec fallow",
-    "prepare": "node scripts/link-agents.mjs && vp config",
-    "test": "vp test run --reporter=minimal --dir scripts"
+    "prepare": "node scripts/link-agents.mjs && vp config"
   },
   "devDependencies": {
     "@commitlint/cli": "catalog:",

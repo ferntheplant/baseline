@@ -36,8 +36,8 @@ New writing goes to one of those homes from the start, and **nothing lives in tw
 - **Dependencies come from the catalog.** Shared versions live in
   [`pnpm-workspace.yaml`](./pnpm-workspace.yaml); packages depend on `catalog:`. sherif fails
   the gate on any warning; its config is the `sherif` key in the root `package.json`, which
-  ignores only `non-existant-packages`, because the template declares `packages/*` and
-  `tools/*` before anything lives there.
+  ignores only `non-existant-packages`, because the template declares `packages/*` before
+  anything lives there.
 - **Secrets never reach git.** gitleaks scans staged changes on pre-commit and every commit in
   CI. A false positive goes in `.gitleaksignore` by fingerprint, so the exception is reviewed
   like any other change.

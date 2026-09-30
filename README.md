@@ -20,6 +20,7 @@ and delete the git history.
 | [`.vite-hooks/`](./.vite-hooks/)                             | Git hooks; see [What runs where](#what-runs-where)                                                       |
 | [`ABSTRACT.md`](./ABSTRACT.md), [`CONTEXT.md`](./CONTEXT.md) | What the project is, and what its words mean — empty, to fill in                                         |
 | [`AGENTS.md`](./AGENTS.md)                                   | Agent instructions, with `CLAUDE.md` symlinked to it                                                     |
+| [`tools/ready-agent/`](./tools/ready-agent/)                 | `vp run ready:agent`: the gate condensed for agents — keep it                                            |
 | [`.agents/skills/`](./.agents/skills/)                       | Agent skills, with `.claude/` symlinked to `.agents/`                                                    |
 
 `prepare` runs on install, so the git hooks install themselves and the agent symlinks repair
