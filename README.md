@@ -13,7 +13,7 @@ A Vite+ monorepo template: the toolchain setup that every repo here starts from,
 | [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)       | CI; see [What runs where](#what-runs-where)                                                              |
 | [`fallow.toml`](./fallow.toml)                                 | Dead-code, duplication, and complexity analysis                                                          |
 | `sherif` in [`package.json`](./package.json)                   | Monorepo `package.json` lint: consistent versions, private root, no empty fields                         |
-| [`mise.toml`](./mise.toml), [`.node-version`](./.node-version) | gitleaks, typos, and Node, installed by mise; CI reads the same `.node-version`                          |
+| [`mise.toml`](./mise.toml), [`.node-version`](./.node-version) | gitleaks, typos, and Node, installed by mise                                                             |
 | [`_typos.toml`](./_typos.toml)                                 | Spell-check exceptions                                                                                   |
 | [`.vite-hooks/`](./.vite-hooks/)                               | Git hooks; see [What runs where](#what-runs-where)                                                       |
 | [`ABSTRACT.md`](./ABSTRACT.md), [`CONTEXT.md`](./CONTEXT.md)   | What the project is, and what its words mean — empty, to fill in                                         |
@@ -34,7 +34,7 @@ mise use --global node@24
 
 Vite+ manages Node too by default, and two tools managing one runtime can download it twice or pick different versions for different commands. With Node switched off, Vite+ uses the Node that mise provides and still manages pnpm from `devEngines` in `package.json`. The global Node matters for the first step below: `vp create` installs dependencies, which runs Node, before the new project's own Node version is installed.
 
-In each project, [`mise.toml`](./mise.toml) installs gitleaks, typos, and the Node version in [`.node-version`](./.node-version), which CI reads too.
+In each project, [`mise.toml`](./mise.toml) installs gitleaks, typos, and Node.
 
 ## Generating a project from it
 
@@ -62,12 +62,12 @@ vp create github:ferntheplant/baseline --git --no-interactive && mv baseline <na
 
 `git clone https://github.com/ferntheplant/baseline.git <name>` works too, if you would rather delete `.git` yourself; then run `mise trust && mise install && vp install` in the clone.
 
-Two things about the `vp create` route are worth knowing, both handled by [`scripts/link-agents.mjs`](./scripts/link-agents.mjs) running from `prepare`. It extracts with degit, which rewrites relative symlinks into absolute paths inside a cache directory it then deletes, so `.claude/` arrives dangling; the same is true of "Download ZIP", which drops symlinks entirely. And `vp create` writes agent instruction files itself before installing, which is why `CLAUDE.md` is gitignored here rather than committed — see the script's header. Nothing to do by hand, but if agent instructions ever go missing in a generated repo, that is where to look.
+The `CLAUDE.md` and `.claude/` symlinks are created on install by [`scripts/link-agents.mjs`](./scripts/link-agents.mjs) rather than committed; its header says why. Nothing to do by hand, but if agent instructions ever go missing in a generated repo, that is where to look.
 
 ## Then, in the new repo
 
 1. Rename the root package: `@baseline/root` → `@<yourname>/root` in `package.json`.
-2. Rename or replace `apps/example`. It exists because `vp run ready` fans out to every package's `test` and `build` scripts, and a workspace with no packages has neither task to plan — `vp run -r test` fails with `Task "test" not found`. Keep at least one package with both scripts, and the gate stays honest.
+2. Rename or replace `apps/example`. It exists because `vp run ready` fans out to every package's `test` and `build` scripts, and `tools/ready-agent` has only `test`; with no package that builds, `vp run -r build` fails with `Task "build" not found`. Keep at least one package with a `build` script, and the gate stays honest.
 3. Fill in [`ABSTRACT.md`](./ABSTRACT.md) (what this project is, and what it is not) and start [`CONTEXT.md`](./CONTEXT.md) with the project's first terms, then put the project's name in the [`AGENTS.md`](./AGENTS.md) heading.
 4. Replace this README.
 5. `vp run ready`, then make the first commit and push it to a new GitHub repo.
@@ -85,7 +85,7 @@ vp exec fallow     # dead code, duplication, complexity
 
 ## What runs where
 
-| Check                                 | pre-commit      | `vp run ready` | CI                               |
+| Check                                 | git hooks       | `vp run ready` | CI                               |
 | ------------------------------------- | --------------- | -------------- | -------------------------------- |
 | gitleaks                              | staged changes  |                | every commit                     |
 | typos                                 | staged files    | whole repo     | whole repo, as ready             |
@@ -95,7 +95,7 @@ vp exec fallow     # dead code, duplication, complexity
 | fallow                                |                 | whole repo     | whole repo, as ready             |
 | commitlint                            | `commit-msg`    |                | each PR commit, and the PR title |
 
-CI runs `vp run ready` in full, so every check in the gate runs there too. pre-commit keeps to what finishes in seconds on the staged files; sherif, tests, builds, and fallow need the whole workspace, so they wait for `ready`. gitleaks is the one check CI runs outside `ready`: it scans every commit on the branch, not the working tree, which catches a secret committed with `--no-verify` and later deleted.
+CI runs `vp run ready` in full, so every check in the gate runs there too. The git hooks keep to what finishes in seconds on the staged files; sherif, tests, builds, and fallow need the whole workspace, so they wait for `ready`. gitleaks is the one check CI runs outside `ready`: it scans every commit on the branch, not the working tree, which catches a secret committed with `--no-verify` and later deleted.
 
 ## Manual GitHub settings
 
