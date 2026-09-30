@@ -74,15 +74,36 @@ const failedSteps = (steps: Step[], results: Outcome[]): { outcome: Outcome; ste
   });
 };
 
-// Keep the head, where linters report, and the tail, where test runners summarise.
-export const trim = (lines: string[], max = MAX_LINES): string[] => {
-  const kept = lines.filter((line) => line.trim() !== "" && !line.startsWith("pass: "));
-  if (kept.length <= max) return kept;
-  const head = Math.floor(max * 0.7);
-  return [...kept.slice(0, head), `… ${kept.length - max} lines omitted …`, ...kept.slice(head - max)];
+// Where the full gate output was saved, for an omission marker to point at. Called only when
+// something is actually omitted, so a short failure leaves no file behind.
+type Save = () => string | undefined;
+
+const once = (save: Save): Save => {
+  let saved: { path: string | undefined } | undefined;
+  return () => (saved ??= { path: save() }).path;
 };
 
-export const condense = (gateOutput: string): string => {
+const omitted = (count: number, save: Save): string => {
+  const path = save();
+  return path ? `… ${count} lines omitted; full output: ${path} …` : `… ${count} lines omitted …`;
+};
+
+const meaningful = (lines: string[]): string[] =>
+  lines.filter((line) => line.trim() !== "" && !line.startsWith("pass: "));
+
+// Keep the head, where linters report, and the tail, where test runners summarise.
+export const trim = (
+  lines: string[],
+  { max = MAX_LINES, save = () => undefined }: { max?: number; save?: Save } = {},
+): string[] => {
+  const kept = meaningful(lines);
+  if (kept.length <= max) return kept;
+  const head = Math.floor(max * 0.7);
+  return [...kept.slice(0, head), omitted(kept.length - max, save), ...kept.slice(head - max)];
+};
+
+export const condense = (gateOutput: string, saveFullOutput: Save = () => undefined): string => {
+  const save = once(saveFullOutput);
   const [body = "", summary = ""] = gateOutput.split(SUMMARY);
   const all = failedSteps(splitSteps(body), outcomes(summary));
   // Report killed steps as failures only when nothing else failed: then the kill was the cause
@@ -93,13 +114,15 @@ export const condense = (gateOutput: string): string => {
   if (failures.length === 0 || failures.some(({ step }) => step === undefined)) {
     // Failed before any step ran (a config error, a missing tool), or the output format moved
     // out from under the parser: show the end of the raw output rather than hide it.
-    return ["ready: failed", ...trim(gateOutput.split("\n")).slice(-FALLBACK_LINES)].join("\n");
+    const raw = meaningful(gateOutput.split("\n"));
+    const tail = raw.length > FALLBACK_LINES ? [omitted(raw.length - FALLBACK_LINES, save)] : [];
+    return ["ready: failed", ...tail, ...raw.slice(-FALLBACK_LINES)].join("\n");
   }
 
   return [
     ...failures.flatMap(({ outcome, step }) => [
       `ready: failed at ${outcome.key}: ${outcome.command}`,
-      ...trim(step?.lines ?? []),
+      ...trim(step?.lines ?? [], { save }),
     ]),
     ...stopped.map(({ outcome }) => `ready: stopped early, result unknown: ${outcome.key}: ${outcome.command}`),
   ].join("\n");

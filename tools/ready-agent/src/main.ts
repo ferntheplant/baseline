@@ -6,6 +6,7 @@
 import { spawnSync } from "node:child_process";
 
 import { condense } from "./condense.ts";
+import { saveFullOutput } from "./full-output.ts";
 import { type RunResult, toRunResult } from "./run-result.ts";
 
 // Ask tools not to colour their output; `toRunResult` strips whatever they emit anyway.
@@ -20,6 +21,7 @@ const gate = vp(["run", "-v", "--log", "grouped", "ready"]);
 if (gate.status === 0) {
   process.stdout.write("ready: ok\n");
 } else {
-  process.stdout.write(`${condense(gate.output)}\n`);
+  const save = (): string | undefined => saveFullOutput(process.cwd(), gate.output, new Date(), process.pid);
+  process.stdout.write(`${condense(gate.output, save)}\n`);
 }
 process.exitCode = gate.status;

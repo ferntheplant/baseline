@@ -90,6 +90,29 @@ ${summary("@x/a#ready: $ vp check ✓", "@x/a#ready: $ vp check ✗ (exit code: 
     expect(out).toBe("ready: failed at @x/a#ready: $ vp check\nsecond run broke");
   });
 
+  test("saves the full output once, and only when a block is trimmed", () => {
+    const long = Array.from({ length: 200 }, (_, i) => `error ${i}`).join("\n");
+    const gate = (lines: string): string => `[@x/a#ready] $ vp check ○ cache miss, executing
+── [@x/a#ready] ──
+${lines}
+[@x/a#ready] $ vp lint ○ cache miss, executing
+── [@x/a#ready] ──
+${lines}
+${summary("@x/a#ready: $ vp check ✗ (exit code: 1)", "@x/a#ready: $ vp lint ✗ (exit code: 1)")}`;
+    let saves = 0;
+    const save = (): string => {
+      saves += 1;
+      return "full.log";
+    };
+
+    expect(condense(gate("one error"), save)).not.toContain("full.log");
+    expect(saves).toBe(0);
+
+    const out = condense(gate(long), save);
+    expect(out.match(/full output: full\.log/g)).toHaveLength(2);
+    expect(saves).toBe(1);
+  });
+
   test("falls back to the end of the raw output when there is no summary", () => {
     const out = condense("error: Failed to find executable typos under cwd /repo");
 
@@ -105,6 +128,14 @@ describe("trim", () => {
   test("keeps head and tail of long output around an omission marker", () => {
     const lines = Array.from({ length: 20 }, (_, i) => `line ${i}`);
 
-    expect(trim(lines, 10)).toEqual([...lines.slice(0, 7), "… 10 lines omitted …", ...lines.slice(17)]);
+    expect(trim(lines, { max: 10 })).toEqual([...lines.slice(0, 7), "… 10 lines omitted …", ...lines.slice(17)]);
+  });
+
+  test("points the omission marker at the saved full output", () => {
+    const lines = Array.from({ length: 20 }, (_, i) => `line ${i}`);
+
+    expect(trim(lines, { max: 10, save: () => "node_modules/.cache/ready-agent/run.log" })[7]).toBe(
+      "… 10 lines omitted; full output: node_modules/.cache/ready-agent/run.log …",
+    );
   });
 });
