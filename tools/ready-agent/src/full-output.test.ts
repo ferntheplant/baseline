@@ -49,6 +49,22 @@ describe("saveFullOutput", () => {
     ]);
   });
 
+  test("never prunes the file this run wrote, even when it sorts oldest", () => {
+    const dir = root();
+    const cache = join(dir, "node_modules", ".cache", "ready-agent");
+    mkdirSync(cache, { recursive: true });
+    for (const minute of [10, 11, 12]) {
+      writeFileSync(join(cache, `2026-09-30T01-${minute}-00-1.log`), "");
+    }
+
+    // The clock stepped back: this run's name sorts before every existing file.
+    const saved = saveFullOutput(dir, "stepped back", new Date("2026-09-30T01:00:00.000Z"), 2, 2);
+
+    expect(saved).toBe("node_modules/.cache/ready-agent/2026-09-30T01-00-00-2.log");
+    expect(readFileSync(join(dir, saved ?? ""), "utf8")).toBe("stepped back");
+    expect(readdirSync(cache).toSorted()).toEqual(["2026-09-30T01-00-00-2.log", "2026-09-30T01-12-00-1.log"]);
+  });
+
   test("returns no path when the file cannot be written", () => {
     const dir = root();
     // A file where the cache directory should go makes mkdir fail.
