@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "ready": "sherif && vp check && vp run -r test && vp run -r build && vp exec fallow",
+    "ready": "sherif && typos && vp check && vp run -r test && vp run -r build && vp exec fallow",
     "prepare": "node scripts/link-agents.mjs && vp config"
   },
   "devDependencies": {

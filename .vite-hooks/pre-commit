@@ -1,6 +1,8 @@
-if ! command -v gitleaks >/dev/null 2>&1; then
-  echo "pre-commit: gitleaks not found; run \`mise install\` from the repo root" >&2
-  exit 1
-fi
+for tool in gitleaks typos; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    echo "pre-commit: $tool not found; run \`mise install\` from the repo root" >&2
+    exit 1
+  fi
+done
 gitleaks git --pre-commit --staged --redact --no-banner
 vp staged

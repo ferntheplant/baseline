@@ -12,11 +12,12 @@ and delete the git history.
 | [`tsconfig.json`](./tsconfig.json)                           | Strict TypeScript, bundler resolution, no implicit `any`, no unchecked index access                      |
 | [`pnpm-workspace.yaml`](./pnpm-workspace.yaml)               | Workspace globs and the dependency catalog                                                               |
 | [`commitlint.config.ts`](./commitlint.config.ts)             | Conventional Commits, with the allowed type list                                                         |
-| [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)     | `vp run ready`, a gitleaks history scan, commit-message lint, and PR-title lint on every PR              |
+| [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)     | CI; see [What runs where](#what-runs-where)                                                              |
 | [`fallow.toml`](./fallow.toml)                               | Dead-code, duplication, and complexity analysis                                                          |
 | `sherif` in [`package.json`](./package.json)                 | Monorepo `package.json` lint: consistent versions, private root, no empty fields                         |
-| [`mise.toml`](./mise.toml)                                   | Node and gitleaks, installed by mise                                                                     |
-| [`.vite-hooks/`](./.vite-hooks/)                             | `pre-commit` → gitleaks + `vp staged`, `commit-msg` → commitlint                                         |
+| [`mise.toml`](./mise.toml)                                   | Node, gitleaks, and typos, installed by mise                                                             |
+| [`_typos.toml`](./_typos.toml)                               | Spell-check exceptions                                                                                   |
+| [`.vite-hooks/`](./.vite-hooks/)                             | Git hooks; see [What runs where](#what-runs-where)                                                       |
 | [`ABSTRACT.md`](./ABSTRACT.md), [`CONTEXT.md`](./CONTEXT.md) | What the project is, and what its words mean — empty, to fill in                                         |
 | [`AGENTS.md`](./AGENTS.md)                                   | Agent instructions, with `CLAUDE.md` symlinked to it                                                     |
 | [`.agents/skills/`](./.agents/skills/)                       | Agent skills, with `.claude/` symlinked to `.agents/`                                                    |
@@ -92,11 +93,28 @@ where to look.
 ## Daily commands
 
 ```bash
-vp run ready       # the gate: sherif, check, every package's test and build, then fallow
+vp run ready       # the gate; see What runs where below
 vp check --fix     # format + autofix lint
 vp test            # run tests
 vp exec fallow     # dead code, duplication, complexity
 ```
+
+## What runs where
+
+| Check                                 | pre-commit      | `vp run ready` | CI                               |
+| ------------------------------------- | --------------- | -------------- | -------------------------------- |
+| gitleaks                              | staged changes  |                | every commit                     |
+| typos                                 | staged files    | whole repo     | whole repo, as ready             |
+| `vp check` (format, lint, type-check) | staged, `--fix` | whole repo     | whole repo, as ready             |
+| sherif                                |                 | whole repo     | whole repo, as ready             |
+| every package's `test` and `build`    |                 | yes            | yes, as ready                    |
+| fallow                                |                 | whole repo     | whole repo, as ready             |
+| commitlint                            | `commit-msg`    |                | each PR commit, and the PR title |
+
+CI runs `vp run ready` in full, so every check in the gate runs there too. pre-commit keeps to what finishes in seconds on the staged files; sherif, tests, builds,
+and fallow need the whole workspace, so they wait for `ready`. gitleaks is the one check CI
+runs outside `ready`: it scans every commit on the branch, not the working tree, which catches
+a secret committed with `--no-verify` and later deleted.
 
 ## Manual GitHub settings
 

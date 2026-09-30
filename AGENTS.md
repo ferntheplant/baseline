@@ -18,9 +18,9 @@ New writing goes to one of those homes from the start, and **nothing lives in tw
 - **Conventional Commits, always.** The allowed types are in
   [`commitlint.config.ts`](./commitlint.config.ts); CI checks every commit on a PR and the PR
   title, because a squash merge takes the title as the subject.
-- **`vp run ready` is the gate.** It runs `sherif` (workspace `package.json` lint), then
-  `vp check` (format, lint, type-check), then every package's `test`, then every package's
-  `build`, then `fallow`. A change is not done until it passes from a clean checkout.
+- **`vp run ready` is the gate.** The `ready` script in [`package.json`](./package.json) is
+  the list of what it runs; the README's _What runs where_ table says what pre-commit and CI
+  add around it. A change is not done until it passes from a clean checkout.
 - **Gate commands live in `package.json`, not in `run.tasks`.** `vp run` reads both, and
   `run.cache: true` already caches scripts, so a task wrapper adds only `dependsOn` and
   per-task `cache.env`/`cache.input` control — nothing a linear `check → test → build` chain
@@ -39,6 +39,8 @@ New writing goes to one of those homes from the start, and **nothing lives in tw
 - **Secrets never reach git.** gitleaks scans staged changes on pre-commit and every commit in
   CI. A false positive goes in `.gitleaksignore` by fingerprint, so the exception is reviewed
   like any other change.
+- **Spelling is checked.** A word typos flags that is correct here (a tool's name, a domain
+  term) goes in [`_typos.toml`](./_typos.toml) with a comment saying what it is.
 - **Dead code gets deleted.** `vp exec fallow` reports what nothing reaches, and an unused
   file, export, or dependency fails the gate. A file that is only reachable at runtime belongs
   in `fallow.toml`; everything else it flags is real.
