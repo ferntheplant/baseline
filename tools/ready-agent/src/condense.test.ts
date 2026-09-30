@@ -45,7 +45,7 @@ describe("condense", () => {
   // Captured from a real run: example's test failed while ready-agent's passed. Both headers
   // print before either block, and the blocks arrive in finishing order.
   test("files parallel output under the step its separator names", () => {
-    const out = condense(fixture("parallel-test-failure.log"), fixture("parallel-test-failure.details"));
+    const out = condense(fixture("parallel-test-failure.gate.txt"), fixture("parallel-test-failure.details.txt"));
 
     expect(out.split("\n")[0]).toBe(
       "ready: failed at @baseline/example#test: ~/apps/example$ vp test run --reporter=minimal",
