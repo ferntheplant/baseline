@@ -20,13 +20,15 @@ New writing goes to one of those homes from the start, and **nothing lives in tw
   title, because a squash merge takes the title as the subject.
 - **`vp run ready` is the gate.** The `ready` script in [`package.json`](./package.json) is
   the list of what it runs; the README's _What runs where_ table says what pre-commit and CI
-  add around it. A change is not done until it passes from a clean checkout.
+  add around it. A change is not done until it passes from a clean checkout. Run it as
+  `vp run ready:agent`: the same gate, printing `ready: ok` or only the output of the steps
+  that failed.
 - **Gate commands live in `package.json`, not in `run.tasks`.** `vp run` reads both, and
   `run.cache: true` already caches scripts, so a task wrapper adds only `dependsOn` and
   per-task `cache.env`/`cache.input` control — nothing a linear `check → test → build` chain
   needs. Scripts stay visible to pnpm, CI, and editors, and a task name can live in only one
-  place. Define a `vite.config.ts` task when it needs cross-package ordering or env-sensitive
-  caching.
+  place. Define a `vite.config.ts` task when it needs cross-package ordering, env-sensitive
+  caching, or no caching at all (`ready:agent`, whose comment says why).
 - **Absolute imports across modules.** `../**` is a lint error; sibling imports are fine.
 - **No `any`, no non-null assertions, no floating promises.** These are lint errors, not
   preferences. If a rule seems wrong for this repo, change it in

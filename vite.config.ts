@@ -83,6 +83,15 @@ export default defineConfig({
   },
   run: {
     cache: true,
+    tasks: {
+      // `vp run ready`, condensed for agents. A task rather than a script because it needs
+      // `cache: false`: the gate it wraps caches per step already, and under script caching the
+      // runner's file tracking makes the nested `vp run` fail to spawn (os error 22).
+      "ready:agent": {
+        command: "node scripts/ready-agent.mjs",
+        cache: false,
+      },
+    },
   },
   test: {
     passWithNoTests: false,

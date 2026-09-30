@@ -94,6 +94,7 @@ where to look.
 
 ```bash
 vp run ready       # the gate; see What runs where below
+vp run ready:agent # the same gate for agents: `ready: ok`, or only the failing steps' output
 vp check --fix     # format + autofix lint
 vp test            # run tests
 vp exec fallow     # dead code, duplication, complexity
