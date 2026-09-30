@@ -28,7 +28,7 @@ ignore = [
 ]
 
 [rules]
-unused-dependencies = "warn"
+unused-dependencies = "error"
 
 [[usedClassMembers]]
 # `_tag` on a hand-rolled Error subclass is a nominal brand, not a runtime read.

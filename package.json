@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "ready": "vp check && vp run -r test && vp run -r build",
+    "ready": "vp check && vp run -r test && vp run -r build && vp exec fallow",
     "prepare": "node scripts/link-agents.mjs && vp config"
   },
   "devDependencies": {
@@ -24,6 +24,6 @@
     }
   },
   "engines": {
-    "node": "^22.22.1 || ^24.11.0 || >=26.0.0"
+    "node": ">=24.11.0"
   }
 }

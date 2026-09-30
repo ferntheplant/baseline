@@ -6,17 +6,18 @@ and delete the git history.
 
 ## What's in the box
 
-| File                                                     | What it settles                                                                                          |
-| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| [`vite.config.ts`](./vite.config.ts)                     | Oxlint rules, Oxfmt style (120 cols, double quotes, sorted imports), staged-file checks, Vitest defaults |
-| [`tsconfig.json`](./tsconfig.json)                       | Strict TypeScript, bundler resolution, no implicit `any`, no unchecked index access                      |
-| [`pnpm-workspace.yaml`](./pnpm-workspace.yaml)           | Workspace globs and the dependency catalog                                                               |
-| [`commitlint.config.ts`](./commitlint.config.ts)         | Conventional Commits, with the allowed type list                                                         |
-| [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) | `vp run ready`, commit-message lint, and PR-title lint on every PR                                       |
-| [`fallow.toml`](./fallow.toml)                           | Dead-code, duplication, and complexity analysis                                                          |
-| [`.vite-hooks/`](./.vite-hooks/)                         | `pre-commit` → `vp staged`, `commit-msg` → commitlint                                                    |
-| [`AGENTS.md`](./AGENTS.md)                               | Agent instructions, with `CLAUDE.md` symlinked to it                                                     |
-| [`.agents/skills/`](./.agents/skills/)                   | `grilling`, `code-review`, `codebase-design`, with `.claude/` symlinked to `.agents/`                    |
+| File                                                         | What it settles                                                                                          |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| [`vite.config.ts`](./vite.config.ts)                         | Oxlint rules, Oxfmt style (120 cols, double quotes, sorted imports), staged-file checks, Vitest defaults |
+| [`tsconfig.json`](./tsconfig.json)                           | Strict TypeScript, bundler resolution, no implicit `any`, no unchecked index access                      |
+| [`pnpm-workspace.yaml`](./pnpm-workspace.yaml)               | Workspace globs and the dependency catalog                                                               |
+| [`commitlint.config.ts`](./commitlint.config.ts)             | Conventional Commits, with the allowed type list                                                         |
+| [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)     | `vp run ready`, commit-message lint, and PR-title lint on every PR                                       |
+| [`fallow.toml`](./fallow.toml)                               | Dead-code, duplication, and complexity analysis                                                          |
+| [`.vite-hooks/`](./.vite-hooks/)                             | `pre-commit` → `vp staged`, `commit-msg` → commitlint                                                    |
+| [`ABSTRACT.md`](./ABSTRACT.md), [`CONTEXT.md`](./CONTEXT.md) | What the project is, and what its words mean — empty, to fill in                                         |
+| [`AGENTS.md`](./AGENTS.md)                                   | Agent instructions, with `CLAUDE.md` symlinked to it                                                     |
+| [`.agents/skills/`](./.agents/skills/)                       | Agent skills, with `.claude/` symlinked to `.agents/`                                                    |
 
 `prepare` runs on install, so the git hooks install themselves and the agent symlinks repair
 themselves on the first `vp install`.
@@ -62,8 +63,9 @@ where to look.
    package's `test` and `build` scripts, and a workspace with no packages has neither task to
    plan — `vp run -r test` fails with `Task "test" not found`. Keep at least one package with
    both scripts, and the gate stays honest.
-3. Rewrite [`AGENTS.md`](./AGENTS.md) above the **House rules** section: what this project is,
-   and where its documentation lives. Delete table rows that point at files you do not have.
+3. Fill in [`ABSTRACT.md`](./ABSTRACT.md) (what this project is, and what it is not) and
+   start [`CONTEXT.md`](./CONTEXT.md) with the project's first terms, then put the project's
+   name in the [`AGENTS.md`](./AGENTS.md) heading.
 4. Replace this README.
 5. `vp run ready`, then make the first commit and push it to a new GitHub repo.
 6. Configure the GitHub settings below — they cannot be committed.
@@ -71,7 +73,7 @@ where to look.
 ## Daily commands
 
 ```bash
-vp run ready       # the gate: check, then every package's test, then every package's build
+vp run ready       # the gate: check, then every package's test and build, then fallow
 vp check --fix     # format + autofix lint
 vp test            # run tests
 vp exec fallow     # dead code, duplication, complexity

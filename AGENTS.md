@@ -1,19 +1,17 @@
 # <Project>
 
-<!-- One paragraph: what this repo is, and what it is not. Replace everything above the House
-rules section — those are the parts the baseline template ships and expects you to keep. -->
+<!-- Replace the heading with the project's name. What the project is belongs in ABSTRACT.md,
+not here. Everything from the House rules section down ships with the baseline template and
+is meant to be kept. -->
 
 ## Where things live
 
-| If you need                    | Read                                   |
-| ------------------------------ | -------------------------------------- |
-| What this project is           | [`ABSTRACT.md`](./ABSTRACT.md)         |
-| What a word means              | [`CONTEXT.md`](./CONTEXT.md)           |
-| Why something is the way it is | [`docs/adr/`](./docs/adr/)             |
-| Why something broken isn't     | [`docs/gotchas.md`](./docs/gotchas.md) |
+| If you need          | Read                           |
+| -------------------- | ------------------------------ |
+| What this project is | [`ABSTRACT.md`](./ABSTRACT.md) |
+| What a word means    | [`CONTEXT.md`](./CONTEXT.md)   |
 
 New writing goes to one of those homes from the start, and **nothing lives in two of them**.
-Delete the rows this repo does not have yet rather than leaving dangling links.
 
 ## House rules
 
@@ -21,8 +19,8 @@ Delete the rows this repo does not have yet rather than leaving dangling links.
   [`commitlint.config.ts`](./commitlint.config.ts); CI checks every commit on a PR and the PR
   title, because a squash merge takes the title as the subject.
 - **`vp run ready` is the gate.** It runs `vp check` (format, lint, type-check), then every
-  package's `test`, then every package's `build`. A change is not done until it passes from a
-  clean checkout.
+  package's `test`, then every package's `build`, then `fallow`. A change is not done until it
+  passes from a clean checkout.
 - **Gate commands live in `package.json`, not in `run.tasks`.** `vp run` reads both, and
   `run.cache: true` already caches scripts, so a task wrapper adds only `dependsOn` and
   per-task `cache.env`/`cache.input` control — nothing a linear `check → test → build` chain
@@ -35,29 +33,22 @@ Delete the rows this repo does not have yet rather than leaving dangling links.
   [`vite.config.ts`](./vite.config.ts) with a comment saying why — do not suppress it inline.
 - **Dependencies come from the catalog.** Shared versions live in
   [`pnpm-workspace.yaml`](./pnpm-workspace.yaml); packages depend on `catalog:`.
-- **Dead code gets deleted.** `vp exec fallow` reports what nothing reaches. A file that is
-  only reachable at runtime belongs in `fallow.toml`; everything else it flags is real.
+- **Dead code gets deleted.** `vp exec fallow` reports what nothing reaches, and an unused
+  file, export, or dependency fails the gate. A file that is only reachable at runtime belongs
+  in `fallow.toml`; everything else it flags is real.
 
 ## Definition of done
 
 A change is done when its production path is reachable through a real entrypoint; success and
 expected failure are tested; `vp run ready` passes from a clean checkout; and the documentation
-is updated where implementation invalidated an assumption — a new decision means a new ADR, a
-new term means a `CONTEXT.md` entry.
+is updated where implementation invalidated an assumption — a new term means a `CONTEXT.md`
+entry, and a change in what the project is or is not means an `ABSTRACT.md` edit.
 
 ## Skills
 
-[`.agents/skills/`](./.agents/skills/) holds skills this repo expects you to use:
-
-- [`grilling`](./.agents/skills/grilling/SKILL.md) — stress-test a plan or decision before
-  building it.
-- [`codebase-design`](./.agents/skills/codebase-design/SKILL.md) — the design vocabulary this
-  repo uses: **module**, **interface**, **implementation**, **adapter**, **seam**, **depth**.
-- [`code-review`](./.agents/skills/code-review/SKILL.md) — review a change against both repo
-  standards and its spec.
-
-`.claude/` is a symlink to `.agents/`, and `CLAUDE.md` is a symlink to this file, so every
-agent reads one set of instructions. `CLAUDE.md` is gitignored and created on install by
+[`.agents/skills/`](./.agents/skills/) holds this repo's skills. `.claude/` is a symlink to
+`.agents/`, and `CLAUDE.md` is a symlink to this file, so every agent reads one set of
+instructions. `CLAUDE.md` is gitignored and created on install by
 [`scripts/link-agents.mjs`](./scripts/link-agents.mjs) — the file's own header says why.
 
 <!--VITE PLUS START-->

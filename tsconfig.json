@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "ES2023",
     "lib": ["ES2023"],
+    "jsx": "react-jsx",
     "types": [],
     "strict": true,
     "skipLibCheck": true,
@@ -24,9 +25,17 @@
   },
   "include": [
     "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "apps/**/*.mts",
+    "apps/**/*.cts",
     "packages/**/*.ts",
+    "packages/**/*.tsx",
+    "packages/**/*.mts",
+    "packages/**/*.cts",
     "tools/**/*.ts",
-    "test/**/*.ts",
+    "tools/**/*.tsx",
+    "tools/**/*.mts",
+    "tools/**/*.cts",
     "commitlint.config.ts",
     "vite.config.ts"
   ]

@@ -22,7 +22,7 @@ export default defineConfig({
     sortPackageJson: true,
   },
   lint: {
-    plugins: ["typescript", "unicorn", "oxc"],
+    plugins: ["typescript", "unicorn", "oxc", "react"],
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     ignorePatterns: IGNORE_PATTERNS,
     options: {
