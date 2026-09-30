@@ -1,0 +1,13 @@
+# Tools Vite+ does not provide, plus Node. Node lives outside Vite+'s managed runtime so one
+# tool owns it: run `vp env off node` once per machine and Vite+ uses mise's Node, while still
+# managing pnpm from `devEngines` in package.json.
+#
+# The Node version is `.node-version`, the one file mise, Vite+, and CI's setup-vp all read.
+# Keep it inside `engines.node`.
+[settings]
+idiomatic_version_file_enable_tools = ["node"]
+
+[tools]
+gitleaks = "8"
+# Exact: typos grows its dictionary in patch releases, so any float can fail CI on unchanged code.
+typos = "1.50.3"

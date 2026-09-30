@@ -9,22 +9,38 @@ on:
 permissions:
   contents: read
 
+# A new push to a PR supersedes the run already in flight for it. Pushes to main are keyed by
+# commit instead, so every commit that lands there gets a complete run. The workflow name keeps
+# a second workflow from cancelling this one's runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # commitlint walks the range between base and head, so the shallow
           # default clone is not enough.
           fetch-depth: 0
 
+      # Only the non-Node tools: setup-vp below provides Node, so mise's `node` entry is skipped.
+      - name: Set up gitleaks and typos
+        uses: jdx/mise-action@v5
+        with:
+          install_args: gitleaks typos
+
+      - name: Scan for secrets
+        run: gitleaks git --redact --no-banner
+
       - name: Set up Vite+
         uses: voidzero-dev/setup-vp@v1
         with:
-          node-version: "24"
+          node-version-file: .node-version
           cache: true
 
       - name: Install dependencies

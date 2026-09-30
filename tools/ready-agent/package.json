@@ -1,0 +1,14 @@
+{
+  "name": "@baseline/ready-agent",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vp test run --reporter=minimal"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

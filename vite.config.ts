@@ -7,7 +7,9 @@ export default defineConfig({
   root: ".",
   logLevel: "error",
   staged: {
-    "*": "vp check --fix",
+    // `--force-exclude` applies `_typos.toml`'s excludes to the file paths lint-staged passes in,
+    // which typos otherwise checks unconditionally.
+    "*": ["typos --force-exclude", "vp check --fix"],
   },
   fmt: {
     ignorePatterns: IGNORE_PATTERNS,
@@ -22,7 +24,7 @@ export default defineConfig({
     sortPackageJson: true,
   },
   lint: {
-    plugins: ["typescript", "unicorn", "oxc"],
+    plugins: ["typescript", "unicorn", "oxc", "react"],
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     ignorePatterns: IGNORE_PATTERNS,
     options: {
@@ -81,6 +83,15 @@ export default defineConfig({
   },
   run: {
     cache: true,
+    tasks: {
+      // `vp run ready`, condensed for agents. A task rather than a script because it needs
+      // `cache: false`: the gate it wraps caches per step already, and under script caching the
+      // runner's file tracking makes the nested `vp run` fail to spawn (os error 22).
+      "ready:agent": {
+        command: "node tools/ready-agent/src/main.ts",
+        cache: false,
+      },
+    },
   },
   test: {
     passWithNoTests: false,
