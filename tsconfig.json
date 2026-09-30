@@ -12,6 +12,7 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "allowImportingTsExtensions": true,
+    "exactOptionalPropertyTypes": true,
     "resolveJsonModule": true,
     "useDefineForClassFields": true,
     "noUnusedLocals": true,
