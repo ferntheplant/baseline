@@ -4,4 +4,5 @@
 [tools]
 node = "24"
 gitleaks = "8"
-typos = "latest"
+# Exact: typos grows its dictionary in patch releases, so any float can fail CI on unchanged code.
+typos = "1.50.3"
