@@ -17,7 +17,7 @@ New writing goes to one of those homes from the start, and **nothing lives in tw
 - **`vp run ready:agent` is the gate.** It runs the checks listed in the `ready` script in [`package.json`](./package.json) and prints `ready: ok`, or only the output of the steps that failed. A step whose output runs long is trimmed, and when the full output could be saved, the `lines omitted` marker names the file holding it; read it when the trimmed part matters. The README's _What runs where_ table says what the git hooks and CI add around the gate. A change is not done until it passes from a clean checkout.
 - **Gate commands live in `package.json`, not in `run.tasks`.** `vp run` reads both, and `run.cache: true` already caches scripts, so a task wrapper adds only `dependsOn` and per-task `cache.env`/`cache.input` control — nothing a linear `check → test → build` chain needs. Scripts stay visible to pnpm, CI, and editors, and a task name can live in only one place. Define a `vite.config.ts` task when it needs cross-package ordering, env-sensitive caching, or no caching at all (`ready:agent`, whose comment says why).
 - **Absolute imports across modules.** `../**` is a lint error; sibling imports are fine.
-- **No `any`, no non-null assertions, no floating promises.** These are lint errors, not preferences. If a rule seems wrong for this repo, change it in [`vite.config.ts`](./vite.config.ts) with a comment saying why — do not suppress it inline.
+- **No `any`, no non-null assertions, no floating promises.** These are lint errors, not preferences. The rules come from the Ultracite presets that [`vite.config.ts`](./vite.config.ts) extends; the README's _Lint presets_ section says which, and how a project adds the presets for its frameworks. If a rule seems wrong for this repo, change it in `vite.config.ts` with a comment saying why — do not suppress it inline.
 - **Dependencies come from the catalog.** Shared versions live in [`pnpm-workspace.yaml`](./pnpm-workspace.yaml); packages depend on `catalog:`. sherif fails the gate on any warning; its config is the `sherif` key in the root `package.json`, which ignores only `non-existant-packages`, because the template declares `packages/*` before anything lives there.
 - **Secrets never reach git.** gitleaks runs where the README's _What runs where_ table says. A false positive goes in `.gitleaksignore` by fingerprint, so the exception is reviewed like any other change.
 - **Spelling is checked.** A word typos flags that is correct here (a tool's name, a domain term) goes in [`_typos.toml`](./_typos.toml) with a comment saying what it is.
@@ -29,7 +29,7 @@ A change is done when its production path is reachable through a real entrypoint
 
 ## Skills
 
-[`.agents/skills/`](./.agents/skills/) holds this repo's skills. `.claude/` is a symlink to `.agents/`, and `CLAUDE.md` is a symlink to this file, so every agent reads one set of instructions. `CLAUDE.md` is gitignored and created on install by [`scripts/link-agents.mjs`](./scripts/link-agents.mjs) — the file's own header says why.
+[`.agents/skills/`](./.agents/skills/) holds this repo's skills. `.claude/` is a symlink to `.agents/`, and `CLAUDE.md` is a symlink to this file, so every agent reads one set of instructions. `CLAUDE.md` is gitignored and created on install by [`scripts/link-agents.ts`](./scripts/link-agents.ts) — the file's own header says why.
 
 <!--VITE PLUS START-->
 

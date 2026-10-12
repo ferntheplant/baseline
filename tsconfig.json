@@ -37,6 +37,7 @@
     "tools/**/*.tsx",
     "tools/**/*.mts",
     "tools/**/*.cts",
+    "scripts/**/*.ts",
     "commitlint.config.ts",
     "vite.config.ts"
   ]

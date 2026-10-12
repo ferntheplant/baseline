@@ -16,45 +16,46 @@
 // worth a warning, not a failed install.
 
 import { lstatSync, readlinkSync, symlinkSync, unlinkSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import path from "node:path";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const root = path.join(import.meta.dirname, "..");
 
-const LINKS = [
+const LINKS: { link: string; target: string; type: "file" | "dir" }[] = [
   { link: "CLAUDE.md", target: "AGENTS.md", type: "file" },
   { link: ".claude", target: ".agents", type: "dir" },
 ];
 
-const report = (message) => process.stderr.write(`link-agents: ${message}\n`);
+const report = (message: string): void => {
+  process.stderr.write(`link-agents: ${message}\n`);
+};
 
 for (const { link, target, type } of LINKS) {
-  const path = join(root, link);
+  const linkPath = path.join(root, link);
+  const existing = lstatSync(linkPath, { throwIfNoEntry: false });
 
-  let existing;
-  try {
-    existing = lstatSync(path);
-  } catch {
-    existing = undefined;
-  }
-
-  if (existing?.isSymbolicLink()) {
-    if (readlinkSync(path) === target) continue;
-    unlinkSync(path);
-  } else if (existing) {
+  if (existing?.isSymbolicLink() === true) {
+    if (readlinkSync(linkPath) === target) {
+      continue;
+    }
+    unlinkSync(linkPath);
+  } else if (existing !== undefined) {
     // Answering the `vp create` agent prompt with CLAUDE.md but not AGENTS.md lands here: it
     // writes a real file holding only the Vite+ block, so the house rules in AGENTS.md never
     // reach Claude Code. Deleting someone's real instructions to force a symlink is worse than
     // saying so, hence the remedy rather than a clobber.
     const kind = existing.isDirectory() ? "directory" : "file";
-    report(`${link} is a real ${kind}, leaving it alone — delete it and reinstall to link it to ${target}`);
+    report(
+      `${link} is a real ${kind}, leaving it alone — delete it and reinstall to link it to ${target}`
+    );
     continue;
   }
 
   try {
-    symlinkSync(target, path, type);
+    symlinkSync(target, linkPath, type);
     report(`relinked ${link} -> ${target}`);
   } catch (error) {
-    report(`could not link ${link} -> ${target}: ${error.message}`);
+    report(
+      `could not link ${link} -> ${target}: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
