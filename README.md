@@ -19,6 +19,7 @@ A Vite+ monorepo template: the toolchain setup that every repo here starts from,
 | [`ABSTRACT.md`](./ABSTRACT.md), [`CONTEXT.md`](./CONTEXT.md) | What the project is, and what its words mean — empty, to fill in |
 | [`AGENTS.md`](./AGENTS.md) | Agent instructions, with `CLAUDE.md` symlinked to it |
 | [`tools/ready-agent/`](./tools/ready-agent/) | `vp run ready:agent`: the gate condensed for agents — keep it |
+| [`tools/workspace-conventions/`](./tools/workspace-conventions/) | A test that holds every package to the script-naming rules in `AGENTS.md` — keep it |
 | [`.agents/skills/`](./.agents/skills/) | Agent skills, with `.claude/` symlinked to `.agents/` |
 
 `prepare` runs on install, so the git hooks install themselves and the agent symlinks repair themselves on the first `vp install`.
@@ -67,7 +68,7 @@ The `CLAUDE.md` and `.claude/` symlinks are created on install by [`scripts/link
 ## Then, in the new repo
 
 1. Rename the root package: `@baseline/root` → `@<yourname>/root` in `package.json`.
-2. Rename or replace `apps/example`. It exists because `vp run ready` fans out to every package's `test` and `build` scripts, and `tools/ready-agent` has only `test`; with no package that builds, `vp run -r build` fails with `Task "build" not found`. Keep at least one package with a `build` script, and the gate stays honest.
+2. Rename or replace `apps/example`. It exists because `vp run ready` fans out to every package's `test` and `build` scripts, and the packages under `tools/` have only `test`; with no package that builds, `vp run -r build` fails with `Task "build" not found`. Keep at least one package with a `build` script, and the gate stays honest.
 3. Fill in [`ABSTRACT.md`](./ABSTRACT.md) (what this project is, and what it is not) and start [`CONTEXT.md`](./CONTEXT.md) with the project's first terms, then put the project's name in the [`AGENTS.md`](./AGENTS.md) heading.
 4. Replace this README.
 5. `vp run ready`, then make the first commit and push it to a new GitHub repo.
