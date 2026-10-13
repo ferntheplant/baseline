@@ -1,3 +1,4 @@
+import { effectNative, recommended } from "@effect/tsgo/oxlint-presets";
 import oxfmt from "ultracite/oxfmt";
 import antiSlop from "ultracite/oxlint/anti-slop";
 import core from "ultracite/oxlint/core";
@@ -8,6 +9,40 @@ import { defineConfig } from "vite-plus";
 // cache it does not know about. oxlint does not inherit `ignorePatterns` from `extends`, so both
 // blocks name the list themselves.
 const IGNORE_PATTERNS = [...(core.ignorePatterns ?? []), "**/.tanstack"];
+
+// Packages written in Effect, held to Effect's lint presets: `recommended`, plus `effectNative`,
+// which bans the platform escape hatches (`node:` imports, global `console`/`Date`/`process.env`,
+// `JSON.parse` over Schema). Scoped rather than extended, because those rules would also flag the
+// plain Node code elsewhere (scripts/, the workspace-conventions test). The rules need the Oxlint
+// patch that `prepare` applies (README, _Effect_).
+const EFFECT_PACKAGES = ["tools/ready-agent/**"];
+
+// Ultracite's vitest preset, taught that @effect/vitest's `it.effect` and friends are test blocks
+// too. A preset's own `overrides` beat this config's, so the rule is changed in the preset.
+const NO_STANDALONE_EXPECT: [
+  "error",
+  { additionalTestBlockFunctions: string[] },
+] = [
+  "error",
+  {
+    additionalTestBlockFunctions: [
+      "it.effect",
+      "it.live",
+      "it.flakyTest",
+      "it.prop",
+    ],
+  },
+];
+const vitestWithEffect = {
+  ...vitest,
+  overrides: (vitest.overrides ?? []).map((override) => ({
+    ...override,
+    rules: {
+      ...override.rules,
+      "vitest/no-standalone-expect": NO_STANDALONE_EXPECT,
+    },
+  })),
+};
 
 export default defineConfig({
   fmt: {
@@ -29,7 +64,7 @@ export default defineConfig({
     // `overrides`. This block holds only what is particular to this repo. A project adds the
     // presets for what it uses (React, Next.js, TanStack, shadcn, Effect); the README's
     // _Lint presets_ section lists them and what each needs installed.
-    extends: [core, vitest, antiSlop],
+    extends: [core, vitestWithEffect, antiSlop],
     ignorePatterns: IGNORE_PATTERNS,
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     options: {
@@ -37,6 +72,31 @@ export default defineConfig({
       typeAware: true,
       typeCheck: true,
     },
+    overrides: [
+      {
+        files: EFFECT_PACKAGES,
+        plugins: [
+          ...(recommended.plugins ?? []),
+          ...(effectNative.plugins ?? []),
+        ],
+        rules: {
+          ...recommended.rules,
+          ...effectNative.rules,
+          // Effect v4 marks every platform module unstable (processes, files, paths, the Node
+          // runtime, @effect/vitest), and there is no stable alternative to move to. The catalog
+          // pins the Effect packages exactly instead, so a breaking change arrives as a reviewed
+          // upgrade.
+          "effecttsgo/unstable-api-usage": "off",
+          // Ultracite rules that misread Effect code. `Effect.gen` and `Effect.fn` take anonymous
+          // generators by convention, and `Effect.fn` names the span itself; Effect's API takes
+          // callbacks and has no `await`; `Effect.forEach(items, f, options)` is not an array
+          // method with a `thisArg`.
+          "func-names": "off",
+          "promise/prefer-await-to-callbacks": "off",
+          "unicorn/no-array-method-this-argument": "off",
+        },
+      },
+    ],
     rules: {
       // fallow already fails the gate on import cycles, across the whole workspace graph.
       "import/no-cycle": "off",

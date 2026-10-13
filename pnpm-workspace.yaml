@@ -12,7 +12,15 @@ catalogMode: prefer
 catalog:
   "@commitlint/cli": ^21.2.3
   "@commitlint/config-conventional": ^21.2.3
+  # The Effect packages are pinned exactly: v4's platform modules are unstable APIs, which may
+  # break between versions (vite.config.ts, the Effect lint override).
+  "@effect/platform-node": 4.0.3
+  # Exact, because each release supports a fixed list of Oxlint versions and patches the one
+  # vite-plus bundles; upgrade it together with vite-plus (README, _Effect_).
+  "@effect/tsgo": 0.51.1
+  "@effect/vitest": 4.0.3
   "@types/node": ^24
+  effect: 4.0.3
   fallow: ^3.30.0
   sherif: ^1.13.0
   typescript: ^7.0.2
