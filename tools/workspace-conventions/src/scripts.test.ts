@@ -29,17 +29,25 @@ const misnamed = (scripts: string[]): string[] =>
     return RESERVED.has(head) || (colon === -1 && !VERBS.has(name));
   });
 
+// The one part of a package.json this test reads: the names in `scripts`, if any.
+interface Manifest {
+  readonly scripts?: object;
+}
+
+const isManifest = (value: unknown): value is Manifest =>
+  typeof value === "object" &&
+  value !== null &&
+  (!("scripts" in value) ||
+    (typeof value.scripts === "object" && value.scripts !== null));
+
 const scriptsOf = (manifest: string): string[] => {
   const parsed: unknown = JSON.parse(
     readFileSync(`${root}${manifest}`, "utf-8")
   );
-  if (typeof parsed !== "object" || parsed === null || !("scripts" in parsed)) {
-    return [];
+  if (!isManifest(parsed)) {
+    throw new TypeError(`${manifest} is not a package manifest`);
   }
-  const { scripts } = parsed;
-  return typeof scripts === "object" && scripts !== null
-    ? Object.keys(scripts)
-    : [];
+  return Object.keys(parsed.scripts ?? {});
 };
 
 // The `packages` globs in pnpm-workspace.yaml.

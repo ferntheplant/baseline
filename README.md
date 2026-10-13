@@ -86,7 +86,7 @@ vp exec fallow     # dead code, duplication, complexity
 
 ## Lint presets
 
-The lint rules and format style come from [Ultracite](https://www.ultracite.ai/)'s Oxlint and Oxfmt presets, which [`vite.config.ts`](./vite.config.ts) extends: `core` for TypeScript and `vitest` for test files. The `lint` block itself holds only what is particular to this repo: absolute imports, Vite+ imports, and import cycles left to fallow. Where a preset and that block disagree, the preset wins: an `overrides` entry in an extended preset beats the same rule in the block's own `overrides`.
+The lint rules and format style come from [Ultracite](https://www.ultracite.ai/)'s Oxlint and Oxfmt presets, which [`vite.config.ts`](./vite.config.ts) extends: `core` for TypeScript, `vitest` for test files, and `anti-slop`, a vendored copy of [dmmulroy/anti-slop](https://github.com/dmmulroy/anti-slop) that rejects low-evidence patterns (unjustified type assertions, `unknown` leaking through signatures, `typeof` checks outside a type guard, module mocking). The `lint` block itself holds only what is particular to this repo: absolute imports, Vite+ imports, and import cycles left to fallow. Where a preset and that block disagree, the preset wins: an `overrides` entry in an extended preset beats the same rule in the block's own `overrides`.
 
 Everything framework-specific is opt-in, so a project adds the presets for what it actually uses to `lint.extends`:
 
@@ -95,8 +95,10 @@ Everything framework-specific is opt-in, so a project adds the presets for what 
 | React | `react` from `ultracite/oxlint/react` | nothing |
 | Next.js | `react`, and `next` from `ultracite/oxlint/next` | nothing |
 | TanStack Router or Start | `react`, and `tanstack` from `ultracite/oxlint/tanstack` | nothing |
-| A Tailwind v4 design system | `shadcn` from `ultracite/oxlint/shadcn` | `@shadcn/lint` installed; the preset's header covers its settings |
+| Tailwind, in any app, package, or tool | `shadcn` from `ultracite/oxlint/shadcn` | `@shadcn/lint` installed; the preset's header covers its settings |
 | Effect | `recommended` from `@effect/tsgo/oxlint-presets` | `@effect/tsgo` installed and its Oxlint patch run from `prepare`; see [Effect](#effect) |
+
+Tailwind is the one to watch for: the moment any app, package, or tool takes on Tailwind, extend `shadcn` in the same change. It is not shadcn/ui-specific: [@shadcn/lint](https://github.com/shadcn-ui/lint) checks class names against the project's own Tailwind v4 theme and component variants, and rejects raw colours, arbitrary values, inline styles, and restyled components. Its `settings` and `jsPlugins` do not merge from an extended config, so the preset's header says what to repeat in `vite.config.ts`.
 
 Ultracite has presets for other frameworks too (Vue, Svelte, Astro, Angular, and more); the [`ultracite/oxlint/*` exports](https://github.com/haydenbleasel/ultracite/tree/main/packages/cli/config/oxlint) list them, each with a header saying what it needs.
 

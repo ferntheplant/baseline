@@ -1,4 +1,5 @@
 import oxfmt from "ultracite/oxfmt";
+import antiSlop from "ultracite/oxlint/anti-slop";
 import core from "ultracite/oxlint/core";
 import vitest from "ultracite/oxlint/vitest";
 import { defineConfig } from "vite-plus";
@@ -28,7 +29,7 @@ export default defineConfig({
     // `overrides`. This block holds only what is particular to this repo. A project adds the
     // presets for what it uses (React, Next.js, TanStack, shadcn, Effect); the README's
     // _Lint presets_ section lists them and what each needs installed.
-    extends: [core, vitest],
+    extends: [core, vitest, antiSlop],
     ignorePatterns: IGNORE_PATTERNS,
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     options: {
