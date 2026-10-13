@@ -22,9 +22,9 @@ catalog:
   "@effect/platform-node": 4.0.3
   "@effect/tsgo": 0.51.1
   "@effect/vitest": 4.0.3
-  "@types/node": 24.13.3
+  "@types/node": 24.19.1
   effect: 4.0.3
-  fallow: 3.30.0
+  fallow: 3.31.0
   sherif: 1.13.0
   taze: 21.3.0
   typescript: 7.0.2
