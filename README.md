@@ -119,13 +119,13 @@ The patch renames the original binaries to `*.original` beside the replacements,
 
 Every version the workspace names is exact: the catalog in [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) holds `1.2.3`, never `^1.2.3`, and packages depend on `catalog:`. `savePrefix: ""` makes `vp add` write versions that way, and a test in [`tools/workspace-conventions`](./tools/workspace-conventions/) fails the gate on a range or on a package that names a version itself. An upgrade is therefore always a diff in the catalog.
 
-Those diffs come from [`dependency-bumps.yml`](./.github/workflows/dependency-bumps.yml). Every Monday it runs [taze](https://github.com/antfu-collective/taze) over the workspace, bumps every catalog entry to its newest minor or patch release, and opens one PR on the `deps/weekly-bumps` branch, or updates it if one is already open. CI runs the full gate on it. The PR body lists what is still behind: majors, GitHub Actions, and a new Vite+ release, if there is one. To run the same bump locally:
+Those diffs come from [`dependency-bumps.yml`](./.github/workflows/dependency-bumps.yml). Every Monday it runs [taze](https://github.com/antfu-collective/taze) over the workspace, bumps every catalog entry to its newest minor or patch release that is at least a week old, and opens one PR on the `deps/weekly-bumps` branch, or updates it if one is already open. CI runs the full gate on it. The PR body lists what is still behind: majors, GitHub Actions, and a new Vite+ release, if there is one. To run the same bump locally:
 
 ```bash
-vp exec taze minor --recursive --include-locked --write && vp install
+vp exec taze minor --recursive --include-locked --maturity-period 7 --write && vp install
 ```
 
-Some dependencies are upgraded by hand, because they have to move together with the Oxlint that `vite-plus` bundles. They are listed under `updateConfig.ignoreDependencies` in `pnpm-workspace.yaml`, with a comment saying why, and both taze and `vp update` skip them. taze also waits out pnpm's `minimumReleaseAge` before it takes a new release.
+Some dependencies are upgraded by hand, because they have to move together with the Oxlint that `vite-plus` bundles. They are listed under `updateConfig.ignoreDependencies` in `pnpm-workspace.yaml`, with a comment saying why, and both taze and `vp update` skip them. The bump takes only releases at least 7 days old (`--maturity-period 7`), so one that is broken or compromised and pulled within days never reaches a PR. The cooldown is on taze rather than pnpm's `minimumReleaseAge`, which would also fail installs of versions already in the lockfile until they aged, including every fresh hand upgrade of `vite-plus`.
 
 ## What runs where
 
