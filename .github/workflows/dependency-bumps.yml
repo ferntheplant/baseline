@@ -47,11 +47,13 @@ jobs:
 
       # Minor and patch only, and exact versions included (`--include-locked`), since every
       # version here is exact. taze skips what `updateConfig.ignoreDependencies` in
-      # pnpm-workspace.yaml holds back, and waits out pnpm's `minimumReleaseAge` before taking a
-      # release. Actions are left to the report below: a token that rewrites workflow files needs
-      # the Workflows permission too.
+      # pnpm-workspace.yaml holds back. `--maturity-period 7` takes only releases at least a week
+      # old, so one that is broken or compromised and pulled within days never reaches a PR; this
+      # is the bump's cooldown only, not pnpm's `minimumReleaseAge`, which would also reject the
+      # versions already locked until they aged. Actions are left to the report below: a token that
+      # rewrites workflow files needs the Workflows permission too.
       - name: Bump dependencies
-        run: vp exec taze minor --recursive --include-locked --write --no-github-actions
+        run: vp exec taze minor --recursive --include-locked --maturity-period 7 --write --no-github-actions
 
       - name: Update the lockfile
         run: vp install --no-frozen-lockfile --lockfile-only
@@ -76,7 +78,7 @@ jobs:
             echo "Still behind after this PR, majors and GitHub Actions:"
             echo
             echo '```'
-            vp exec taze major --recursive --include-locked
+            vp exec taze major --recursive --include-locked --maturity-period 7
             echo '```'
           } > "$RUNNER_TEMP/pr-body.md"
 
