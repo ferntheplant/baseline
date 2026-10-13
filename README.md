@@ -6,13 +6,7 @@ A Vite+ monorepo template: the toolchain every repo here starts from, already wi
 
 ## Generating a project from it
 
-Set up the machine as [`BASELINE.md`](./BASELINE.md#prerequisites) describes, and give mise a global Node, since `vp create` installs dependencies, which runs Node, before the new project's own Node version is installed:
-
-```bash
-mise use --global node@24
-```
-
-Then:
+Set up the machine as [`BASELINE.md`](./BASELINE.md#prerequisites) describes, then:
 
 ```bash
 vp create github:ferntheplant/baseline

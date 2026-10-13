@@ -14,7 +14,8 @@ This repo's toolchain comes from [baseline](https://github.com/ferntheplant/base
 | [`.github/workflows/dependency-bumps.yml`](./.github/workflows/dependency-bumps.yml) | A weekly PR bumping minor and patch versions; see [Dependency versions](#dependency-versions) |
 | [`fallow.toml`](./fallow.toml) | Dead-code, duplication, and complexity analysis |
 | `sherif` in [`package.json`](./package.json) | Monorepo `package.json` lint: consistent versions, private root, no empty fields. Every warning fails; only `non-existant-packages` is ignored, because `packages/*` is declared before anything lives there |
-| [`mise.toml`](./mise.toml), [`.node-version`](./.node-version) | The tools Vite+ does not provide, and Node, installed by mise |
+| [`mise.toml`](./mise.toml) | The tools Vite+ does not provide, installed by mise |
+| [`.node-version`](./.node-version) | The Node version Vite+ and CI install; keep it inside `engines.node` in `package.json` |
 | [`_typos.toml`](./_typos.toml) | Spell-check exceptions |
 | [`.vite-hooks/`](./.vite-hooks/) | Git hooks; see [What runs where](#what-runs-where) |
 | [`ABSTRACT.md`](./ABSTRACT.md), [`CONTEXT.md`](./CONTEXT.md) | What the project is, and what its words mean |
@@ -28,13 +29,15 @@ This repo's toolchain comes from [baseline](https://github.com/ferntheplant/base
 
 ## Prerequisites
 
-Install [Vite+](https://viteplus.dev/guide/) and [mise](https://mise.jdx.dev/getting-started.html), and activate mise in your shell as its guide describes, so the tools it installs are on your `PATH`. Then, once per machine, hand Node to mise:
+Install [Vite+](https://viteplus.dev/guide/) and [mise](https://mise.jdx.dev/getting-started.html), and activate mise in your shell as its guide describes, so the tools it installs are on your `PATH`.
+
+Vite+ owns Node and pnpm: it installs the Node in `.node-version` and the pnpm in `devEngines` in `package.json`. Managed mode is its default; if you have switched it off (`vp env off`), switch it back on once per machine, or a Node or pnpm installed some other way wins over the pinned ones:
 
 ```bash
-vp env off node
+vp env on
 ```
 
-Vite+ manages Node too by default, and two tools managing one runtime can download it twice or pick different versions for different commands. With Node switched off, Vite+ uses the Node that mise provides and still manages pnpm from `devEngines` in `package.json`; [`mise.toml`](./mise.toml) disables pnpm in the repo, so a pnpm in your global mise config cannot shadow it.
+[`mise.toml`](./mise.toml) disables Node and pnpm in the repo, so a version in your global mise config cannot shadow Vite+'s.
 
 In each clone, install the tools [`mise.toml`](./mise.toml) names; the pre-commit hook refuses to commit until gitleaks and typos are installed:
 

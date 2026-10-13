@@ -1,13 +1,11 @@
-# Tools Vite+ does not provide, plus Node (BASELINE.md, _Prerequisites_, says why Node is here).
-#
-# The Node version is `.node-version`, the one file mise, Vite+, and CI's setup-vp all read.
-# Keep it inside `engines.node`.
+# Tools Vite+ does not provide. Vite+ owns Node, from `.node-version`, and pnpm, from `devEngines`
+# in package.json (BASELINE.md, _Prerequisites_).
 [settings]
-idiomatic_version_file_enable_tools = ["node"]
-# Vite+ owns pnpm, from `devEngines` in package.json. A pnpm in someone's global mise config
-# would otherwise sit ahead of Vite+'s on PATH inside this repo; a pnpm 11 there crashes on
-# pnpm 12's native binary when it switches to the pinned version.
-disable_tools = ["pnpm"]
+# A Node or pnpm in someone's global mise config would otherwise sit ahead of Vite+'s on PATH
+# inside this repo. Two tools managing one runtime can pick different versions for different
+# commands, and a pnpm 11 there crashes on pnpm 12's native binary when it switches to the
+# pinned version.
+disable_tools = ["node", "pnpm"]
 
 [tools]
 # Exact, like every version in the workspace; taze bumps only what pnpm installs, so these move
