@@ -12,6 +12,8 @@
 // run's own output, never from `vp run --last-details`, which reports whichever run in the
 // checkout finished last and so mixes up concurrent gates.
 
+import { Effect, Option } from "effect";
+
 const MAX_LINES = 120;
 const FALLBACK_LINES = 40;
 
@@ -106,75 +108,88 @@ const failedSteps = (
   });
 };
 
-// Where the full gate output was saved, for an omission marker to point at. Called only when
-// something is actually omitted, so a short failure leaves no file behind.
-type Save = () => string | undefined;
+// Saves the full gate output and says where, for an omission marker to point at. Run only when
+// something is actually omitted, so a short failure leaves no file behind, and at most once per
+// report.
+export type SaveFullOutput<R> = Effect.Effect<Option.Option<string>, never, R>;
 
-const once = (save: Save | undefined): Save => {
-  let saved: { path: string | undefined } | undefined;
-  return () => (saved ??= { path: save?.() }).path;
-};
-
-const omitted = (count: number, save: Save | undefined): string => {
-  const path = save?.();
-  return path === undefined
-    ? `… ${count} lines omitted …`
-    : `… ${count} lines omitted; full output: ${path} …`;
-};
+const omitted = <R>(
+  count: number,
+  save: SaveFullOutput<R>
+): Effect.Effect<string, never, R> =>
+  Effect.map(
+    save,
+    Option.match({
+      onNone: () => `… ${count} lines omitted …`,
+      onSome: (path) => `… ${count} lines omitted; full output: ${path} …`,
+    })
+  );
 
 const meaningful = (lines: string[]): string[] =>
   lines.filter((line) => line.trim() !== "" && !line.startsWith("pass: "));
 
 // Keep the head, where linters report, and the tail, where test runners summarise.
-export const trim = (
+export const trim = <R = never>(
   lines: string[],
-  { max = MAX_LINES, save }: { max?: number; save?: Save } = {}
-): string[] => {
+  {
+    max = MAX_LINES,
+    save = Effect.succeedNone,
+  }: { max?: number; save?: SaveFullOutput<R> } = {}
+): Effect.Effect<string[], never, R> => {
   const kept = meaningful(lines);
   if (kept.length <= max) {
-    return kept;
+    return Effect.succeed(kept);
   }
   const head = Math.floor(max * 0.7);
-  return [
+  return Effect.map(omitted(kept.length - max, save), (marker) => [
     ...kept.slice(0, head),
-    omitted(kept.length - max, save),
+    marker,
     ...kept.slice(head - max),
-  ];
+  ]);
 };
 
-export const condense = (gateOutput: string, saveFullOutput?: Save): string => {
-  const save = once(saveFullOutput);
-  const [body = "", summary = ""] = gateOutput.split(SUMMARY);
-  const all = failedSteps(splitSteps(body), outcomes(summary));
-  // Report killed steps as failures only when nothing else failed: then the kill was the cause
-  // (out of memory, a timeout), not a side effect of another step's failure.
-  const failures = all.some(({ outcome }) => !killed(outcome))
-    ? all.filter(({ outcome }) => !killed(outcome))
-    : all;
-  const stopped = all.filter((entry) => !failures.includes(entry));
+export const condense = <R = never>(
+  gateOutput: string,
+  saveFullOutput: SaveFullOutput<R> = Effect.succeedNone
+): Effect.Effect<string, never, R> =>
+  Effect.gen(function* () {
+    const save = yield* Effect.cached(saveFullOutput);
+    const [body = "", summary = ""] = gateOutput.split(SUMMARY);
+    const all = failedSteps(splitSteps(body), outcomes(summary));
+    // Report killed steps as failures only when nothing else failed: then the kill was the cause
+    // (out of memory, a timeout), not a side effect of another step's failure.
+    const failures = all.some(({ outcome }) => !killed(outcome))
+      ? all.filter(({ outcome }) => !killed(outcome))
+      : all;
+    const stopped = all.filter((entry) => !failures.includes(entry));
 
-  if (
-    failures.length === 0 ||
-    failures.some(({ step }) => step === undefined)
-  ) {
-    // Failed before any step ran (a config error, a missing tool), or the output format moved
-    // out from under the parser: show the end of the raw output rather than hide it.
-    const raw = meaningful(gateOutput.split("\n"));
-    const tail =
-      raw.length > FALLBACK_LINES
-        ? [omitted(raw.length - FALLBACK_LINES, save)]
-        : [];
-    return ["ready: failed", ...tail, ...raw.slice(-FALLBACK_LINES)].join("\n");
-  }
+    if (
+      failures.length === 0 ||
+      failures.some(({ step }) => step === undefined)
+    ) {
+      // Failed before any step ran (a config error, a missing tool), or the output format moved
+      // out from under the parser: show the end of the raw output rather than hide it.
+      const raw = meaningful(gateOutput.split("\n"));
+      const tail =
+        raw.length > FALLBACK_LINES
+          ? [yield* omitted(raw.length - FALLBACK_LINES, save)]
+          : [];
+      return ["ready: failed", ...tail, ...raw.slice(-FALLBACK_LINES)].join(
+        "\n"
+      );
+    }
 
-  return [
-    ...failures.flatMap(({ outcome, step }) => [
-      `ready: failed at ${outcome.key}: ${outcome.command}`,
-      ...trim(step?.lines ?? [], { save }),
-    ]),
-    ...stopped.map(
-      ({ outcome }) =>
-        `ready: stopped early, result unknown: ${outcome.key}: ${outcome.command}`
-    ),
-  ].join("\n");
-};
+    const blocks = yield* Effect.forEach(failures, ({ outcome, step }) =>
+      Effect.map(trim(step?.lines ?? [], { save }), (lines) => [
+        `ready: failed at ${outcome.key}: ${outcome.command}`,
+        ...lines,
+      ])
+    );
+    return [
+      ...blocks.flat(),
+      ...stopped.map(
+        ({ outcome }) =>
+          `ready: stopped early, result unknown: ${outcome.key}: ${outcome.command}`
+      ),
+    ].join("\n");
+  });

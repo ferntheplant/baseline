@@ -6,7 +6,12 @@
   "scripts": {
     "test": "vp test run --reporter=minimal"
   },
+  "dependencies": {
+    "@effect/platform-node": "catalog:",
+    "effect": "catalog:"
+  },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "vite": "catalog:",
     "vite-plus": "catalog:"

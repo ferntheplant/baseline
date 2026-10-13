@@ -18,7 +18,7 @@ A Vite+ monorepo template: the toolchain setup that every repo here starts from,
 | [`.vite-hooks/`](./.vite-hooks/) | Git hooks; see [What runs where](#what-runs-where) |
 | [`ABSTRACT.md`](./ABSTRACT.md), [`CONTEXT.md`](./CONTEXT.md) | What the project is, and what its words mean — empty, to fill in |
 | [`AGENTS.md`](./AGENTS.md) | Agent instructions, with `CLAUDE.md` symlinked to it |
-| [`tools/ready-agent/`](./tools/ready-agent/) | `vp run ready:agent`: the gate condensed for agents — keep it |
+| [`tools/ready-agent/`](./tools/ready-agent/) | `vp run ready:agent`: the gate condensed for agents, written in Effect v4 — keep it |
 | [`tools/workspace-conventions/`](./tools/workspace-conventions/) | A test that holds every package to the script-naming rules in `AGENTS.md` — keep it |
 | [`.agents/skills/`](./.agents/skills/) | Agent skills, with `.claude/` symlinked to `.agents/` |
 
@@ -96,7 +96,7 @@ Everything framework-specific is opt-in, so a project adds the presets for what 
 | Next.js | `react`, and `next` from `ultracite/oxlint/next` | nothing |
 | TanStack Router or Start | `react`, and `tanstack` from `ultracite/oxlint/tanstack` | nothing |
 | Tailwind, in any app, package, or tool | `shadcn` from `ultracite/oxlint/shadcn` | `@shadcn/lint` installed; the preset's header covers its settings |
-| Effect | `recommended` from `@effect/tsgo/oxlint-presets` | `@effect/tsgo` installed and its Oxlint patch run from `prepare`; see [Effect](#effect) |
+| Effect | nothing: depend on `effect` and add the package's glob to `EFFECT_PACKAGES` in `vite.config.ts` | already set up for `tools/ready-agent`; see [Effect](#effect) |
 
 Tailwind is the one to watch for: the moment any app, package, or tool takes on Tailwind, extend `shadcn` in the same change. It is not shadcn/ui-specific: [@shadcn/lint](https://github.com/shadcn-ui/lint) checks class names against the project's own Tailwind v4 theme and component variants, and rejects raw colours, arbitrary values, inline styles, and restyled components. Its `settings` and `jsPlugins` do not merge from an extended config, so the preset's header says what to repeat in `vite.config.ts`.
 
@@ -106,14 +106,13 @@ Ultracite lists every rule by name, so a preset that names a rule the bundled Ox
 
 ### Effect
 
-Effect's lint rules run inside Oxlint's type-aware pass, through a build of Oxlint and tsgolint that [`@effect/tsgo`](https://github.com/Effect-TS/tsgo/blob/main/docs/README.md) swaps in for the ones Vite+ installed. Unpatched, Oxlint rejects the whole config with `Unknown plugin: 'effecttsgo'`, which is why the patch runs from `prepare` rather than by hand:
+[`tools/ready-agent`](./tools/ready-agent/) is written in Effect v4, so the template ships Effect's lint rules already wired up. They run inside Oxlint's type-aware pass, through a build of Oxlint and tsgolint that [`@effect/tsgo`](https://github.com/Effect-TS/tsgo/blob/main/docs/README.md) swaps in for the ones Vite+ installed. `prepare` applies that patch on every install (`effect-tsgo patch --oxlint`). Unpatched, Oxlint rejects the whole config with `Unknown plugin: 'effecttsgo'`; an install with nothing new to install skips `prepare`, so after pulling this setup into an existing checkout run `pnpm run prepare` once.
 
-1. `vp add -Dw @effect/tsgo`
-2. In `package.json`, run the patch on every install: `"prepare": "node scripts/link-agents.ts && effect-tsgo patch --oxlint && vp config"`. Then run `pnpm run prepare` once: an install with nothing new to install skips `prepare`.
-3. In `vite.config.ts`, `import { recommended } from "@effect/tsgo/oxlint-presets";` and add `recommended` to `lint.extends`. `strict` makes every default-on rule an error; `correctness`, `antipattern`, `effect-native`, and `style` each select one category.
-4. If the editor runs the Effect language service, set `"diagnostics": false` on its `@effect/language-service` plugin entry in `tsconfig.json`, so each diagnostic is reported once, by Oxlint.
+The rules apply only to the packages listed in `EFFECT_PACKAGES` in [`vite.config.ts`](./vite.config.ts): Effect's `recommended` preset plus `effectNative`, which bans what Effect replaces (`node:` imports with an Effect service, global `console`, `Date`, and `process.env`, `JSON.parse` over Schema). They stay off elsewhere because plain Node code, like `scripts/link-agents.ts`, would fail them. To write another package in Effect, add its glob to `EFFECT_PACKAGES`. The same override turns off the few Ultracite rules that misread Effect code, with a comment on each.
 
-The patch renames the original binaries to `*.original` beside the replacements, so pnpm's shared store is untouched, and `effect-tsgo unpatch --oxlint` restores them. Each `@effect/tsgo` release supports a fixed list of Oxlint versions (the _Supported Package Versions_ table in its README), which makes it a third package to check before upgrading `vite-plus`.
+If the editor runs the Effect language service, set `"diagnostics": false` on its `@effect/language-service` plugin entry in `tsconfig.json`, so each diagnostic is reported once, by Oxlint.
+
+The patch renames the original binaries to `*.original` beside the replacements, so pnpm's shared store is untouched, and `effect-tsgo unpatch --oxlint` restores them. Each `@effect/tsgo` release supports a fixed list of Oxlint versions (the _Supported Package Versions_ table in its README), so the catalog pins it exactly, and it is a third package to check before upgrading `vite-plus`. The Effect packages themselves are pinned exactly too, because v4's platform modules are unstable APIs that may change between versions.
 
 ## What runs where
 

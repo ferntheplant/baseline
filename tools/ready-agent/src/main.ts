@@ -3,34 +3,35 @@
 // than restating it, so the `ready` script in the root package.json stays the single list of
 // what the gate runs, and every step keeps its cache.
 
-import { spawnSync } from "node:child_process";
+import { NodeRuntime, NodeServices } from "@effect/platform-node";
+import { Console, Data, Effect, Runtime } from "effect";
 
 import { condense } from "./condense.ts";
 import { saveFullOutput } from "./full-output.ts";
-import { toRunResult } from "./run-result.ts";
-import type { RunResult } from "./run-result.ts";
+import { run } from "./run.ts";
 
-// Ask tools not to colour their output; `toRunResult` strips whatever they emit anyway.
-const env = { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" };
-
-const vp = (args: string[]): RunResult =>
-  toRunResult(
-    args,
-    spawnSync("vp", args, {
-      encoding: "utf-8",
-      env,
-      maxBuffer: 64 * 1024 * 1024,
-    })
-  );
-
-// `-v` appends the per-step ✓/✗ summary to this run's own output, which `condense` reads.
-const gate = vp(["run", "-v", "--log", "grouped", "ready"]);
-
-if (gate.status === 0) {
-  process.stdout.write("ready: ok\n");
-} else {
-  const save = (): string | undefined =>
-    saveFullOutput(process.cwd(), gate.output, new Date(), process.pid);
-  process.stdout.write(`${condense(gate.output, save)}\n`);
+// The gate failed and the condensed report has been printed. `runMain` exits with the gate's own
+// status, and skips its error log: the report already says what failed.
+class GateFailed extends Data.TaggedError("GateFailed")<{
+  readonly status: number;
+}> {
+  readonly [Runtime.errorExitCode] = this.status;
+  readonly [Runtime.errorReported] = false;
 }
-process.exitCode = gate.status;
+
+const main = Effect.gen(function* () {
+  // `-v` appends the per-step ✓/✗ summary to this run's own output, which `condense` reads.
+  const gate = yield* run("vp", ["run", "-v", "--log", "grouped", "ready"]);
+  if (gate.status === 0) {
+    return yield* Console.log("ready: ok");
+  }
+  yield* Console.log(
+    yield* condense(
+      gate.output,
+      saveFullOutput(process.cwd(), gate.output, process.pid)
+    )
+  );
+  return yield* new GateFailed({ status: gate.status });
+});
+
+NodeRuntime.runMain(main.pipe(Effect.provide(NodeServices.layer)));

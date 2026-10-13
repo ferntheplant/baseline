@@ -1,5 +1,4 @@
-import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import path from "node:path";
+import { DateTime, Effect, FileSystem, Option, Path } from "effect";
 
 // Saves a failed gate's full output where the agent can read it when the condensed report had
 // to omit lines. One file per run, named by time and process id, so concurrent gates (several
@@ -16,43 +15,53 @@ const SAVED = /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d+\.log$/u;
 
 // Deletes the oldest saved outputs, never `own`: the file this run just wrote and is about to
 // name in its report, which would otherwise be deleted whenever it sorts first.
-const prune = (dir: string, own: string, keep: number): void => {
-  const others = readdirSync(dir)
+const prune = Effect.fn("prune")(function* (
+  dir: string,
+  own: string,
+  keep: number
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const others = (yield* fs.readDirectory(dir))
     .filter((name) => SAVED.test(name) && name !== own)
     .toSorted();
   const excess = Math.max(0, others.length - (keep - 1));
   // `force`: a concurrent run pruning the same directory may have removed the file already.
-  for (const name of others.slice(0, excess)) {
-    rmSync(path.join(dir, name), { force: true });
-  }
-};
+  yield* Effect.forEach(
+    others.slice(0, excess),
+    (name) => fs.remove(path.join(dir, name), { force: true }),
+    {
+      discard: true,
+    }
+  );
+});
 
-export const saveFullOutput = (
+// The saved file's path from `root`, or none when it could not be written: a report without the
+// path beats no report, and the marker still says lines were omitted.
+export const saveFullOutput = Effect.fn("saveFullOutput")(function* (
   root: string,
   output: string,
-  now: Date,
   pid: number,
-  keep = KEEP
-): string | undefined => {
+  keep: number = KEEP
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const now = yield* DateTime.now;
   const dir = path.join(root, "node_modules", ".cache", "ready-agent");
-  const file = path.join(
-    dir,
-    `${now
-      .toISOString()
-      .replaceAll(":", "-")
-      .replace(/\.\d+Z$/u, "")}-${pid}.log`
+  const name = `${DateTime.formatIso(now)
+    .replaceAll(":", "-")
+    .replace(/\.\d+Z$/u, "")}-${pid}.log`;
+  const file = path.join(dir, name);
+
+  const written = yield* fs.makeDirectory(dir, { recursive: true }).pipe(
+    Effect.andThen(fs.writeFileString(file, output)),
+    Effect.as(true),
+    Effect.orElseSucceed(() => false)
   );
-  try {
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(file, output);
-  } catch {
-    // A report without the path beats no report: the marker still says lines were omitted.
-    return undefined;
+  if (!written) {
+    return Option.none<string>();
   }
-  try {
-    prune(dir, path.basename(file), keep);
-  } catch {
-    // The file this run needs is written; a failed cleanup only postpones pruning to next time.
-  }
-  return path.relative(root, file);
-};
+  // The file this run needs is written; a failed cleanup only postpones pruning to next time.
+  yield* Effect.ignore(prune(dir, name, keep));
+  return Option.some(path.relative(root, file));
+});
