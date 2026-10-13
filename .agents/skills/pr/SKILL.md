@@ -1,6 +1,12 @@
 ---
 name: pr
 description: "Use when writing a PR body."
+metadata:
+  credits:
+    skill: show-me
+    author: Dex Horthy
+    organisation: Humanlayer
+    url: "https://github.com/humanlayer/skills/blob/main/plugins/show-me/skills/show-me/SKILL.md"
 ---
 
 Use this template for writing the PR body:
@@ -13,7 +19,7 @@ Use this template for writing the PR body:
 ## Evidence
 
 - **Before:** <screenshot/output/failing test run>
-- **After:** <screenshot/output/passing test run>
+  **After:** <screenshot/output/passing test run>
 
 ## Merge Danger
 

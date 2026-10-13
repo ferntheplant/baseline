@@ -47,7 +47,10 @@ const vitestWithEffect = {
 export default defineConfig({
   fmt: {
     ...oxfmt,
-    ignorePatterns: IGNORE_PATTERNS,
+    // Skills are vendored from other repos and edited in place (`.agents/vendored-skills.jsonc`).
+    // Reformatting them would make every line the formatter touches a local edit, which then
+    // conflicts with each upstream change to that line when `/rebaseline` merges it in.
+    ignorePatterns: [...IGNORE_PATTERNS, ".agents/skills/**"],
     overrides: [
       {
         // `vp config` runs on every install and rewrites its block in AGENTS.md hard-wrapped at

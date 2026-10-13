@@ -13,3 +13,6 @@ idiomatic_version_file_enable_tools = ["node"]
 gitleaks = "8.30.1"
 # Exact: typos grows its dictionary in patch releases, so any float can fail CI on unchanged code.
 typos = "1.50.3"
+# Browser automation for agents; the `agent-browser` skill drives it. Its first run on a machine
+# needs `agent-browser install` to download a Chrome, which the skill says.
+"npm:agent-browser" = "0.38.2"
