@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "ready": "sherif && typos && vp check && vp run -r test && vp run -r build && vp exec fallow",
-    "prepare": "node scripts/link-agents.ts && effect-tsgo patch --oxlint && vp config"
+    "prepare": "node scripts/link-agents.ts && effect-tsgo patch --no-typescript --oxlint && vp config"
   },
   "devDependencies": {
     "@commitlint/cli": "catalog:",
