@@ -7,28 +7,45 @@ packages:
 # package cannot silently land on a different version of a shared dependency.
 catalogMode: prefer
 
+# `vp add` writes the exact version it resolved, never a `^` range. The gate holds every version
+# here to that (tools/workspace-conventions), so what a manifest names is what installs, and an
+# upgrade is always a visible diff.
+savePrefix: ""
+
 # One version of every shared dependency, named once. Packages depend on
 # `catalog:` and never on a version range, so an upgrade is a one-line edit here.
+# .github/workflows/dependency-bumps.yml opens a weekly PR bumping these to their newest
+# minor and patch versions, except the ones `updateConfig` below holds back.
 catalog:
-  "@commitlint/cli": ^21.2.3
-  "@commitlint/config-conventional": ^21.2.3
-  # The Effect packages are pinned exactly: v4's platform modules are unstable APIs, which may
-  # break between versions (vite.config.ts, the Effect lint override).
+  "@commitlint/cli": 21.2.3
+  "@commitlint/config-conventional": 21.2.3
   "@effect/platform-node": 4.0.3
-  # Exact, because each release supports a fixed list of Oxlint versions and patches the one
-  # vite-plus bundles; upgrade it together with vite-plus (README, _Effect_).
   "@effect/tsgo": 0.51.1
   "@effect/vitest": 4.0.3
-  "@types/node": ^24
+  "@types/node": 24.13.3
   effect: 4.0.3
-  fallow: ^3.30.0
-  sherif: ^1.13.0
-  typescript: ^7.0.2
-  # Exact, because its presets name every rule and fail to load on a bundled Oxlint that lacks
-  # one; upgrade it together with vite-plus (README, _Lint presets_).
+  fallow: 3.30.0
+  sherif: 1.13.0
+  taze: 21.3.0
+  typescript: 7.0.2
   ultracite: 8.0.0
   vite: npm:@voidzero-dev/vite-plus-core@1.1.0
   vite-plus: 1.1.0
+  yaml: 2.9.1
+
+# Upgraded by hand, together, never by the weekly bump: each of these is tied to the Oxlint that
+# vite-plus bundles. Both `pnpm update` and taze skip them.
+updateConfig:
+  ignoreDependencies:
+    # Vite+ and the Vite core it ships under the `vite` alias move as one release.
+    - vite
+    - vite-plus
+    # Each release supports a fixed list of Oxlint versions and patches the one vite-plus
+    # bundles (README, _Effect_).
+    - "@effect/tsgo"
+    # Its presets name every rule and fail to load on a bundled Oxlint that lacks one
+    # (README, _Lint presets_).
+    - ultracite
 
 # Vite+ ships its own Vite core under an alias; the override keeps every
 # transitive `vite` on that same build rather than the public package.
