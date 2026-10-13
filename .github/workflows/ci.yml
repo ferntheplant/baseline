@@ -28,7 +28,7 @@ jobs:
           # default clone is not enough.
           fetch-depth: 0
 
-      # Only the non-Node tools: setup-vp below provides Node, so mise's `node` entry is skipped.
+      # Only what CI runs; setup-vp below provides Node.
       - name: Set up gitleaks and typos
         uses: jdx/mise-action@v5
         with:
