@@ -59,7 +59,8 @@ jobs:
           NO_COLOR: "1"
         run: |
           current=$(yq '.catalog["vite-plus"]' pnpm-workspace.yaml)
-          latest=$(npm view vite-plus version)
+          # Through pnpm: npm refuses to run where `devEngines` names another package manager.
+          latest=$(vp info vite-plus version)
           {
             echo "Minor and patch bumps from taze. CI runs the full gate on this PR; merge it when that passes."
             if [ "$current" != "$latest" ]; then
