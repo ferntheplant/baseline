@@ -7,13 +7,11 @@ packages:
 # package cannot silently land on a different version of a shared dependency.
 catalogMode: prefer
 
-# `vp add` writes the exact version it resolved, never a `^` range. The gate holds every version
-# here to that (tools/workspace-conventions), so what a manifest names is what installs, and an
-# upgrade is always a visible diff.
+# `vp add` writes the exact version it resolved, never a `^` range; tools/workspace-conventions
+# holds every version here to that, and says why.
 savePrefix: ""
 
-# One version of every shared dependency, named once. Packages depend on
-# `catalog:` and never on a version range, so an upgrade is a one-line edit here.
+# One version of every shared dependency, named once; packages depend on `catalog:`.
 # .github/workflows/dependency-bumps.yml opens a weekly PR bumping these to their newest
 # minor and patch versions, except the ones `updateConfig` below holds back.
 catalog:
@@ -41,10 +39,10 @@ updateConfig:
     - vite
     - vite-plus
     # Each release supports a fixed list of Oxlint versions and patches the one vite-plus
-    # bundles (README, _Effect_).
+    # bundles (BASELINE.md, _Effect_).
     - "@effect/tsgo"
     # Its presets name every rule and fail to load on a bundled Oxlint that lacks one
-    # (README, _Lint presets_).
+    # (BASELINE.md, _Lint presets_).
     - ultracite
 
 # Vite+ ships its own Vite core under an alias; the override keeps every

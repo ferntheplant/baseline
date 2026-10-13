@@ -14,7 +14,7 @@ const IGNORE_PATTERNS = [...(core.ignorePatterns ?? []), "**/.tanstack"];
 // which bans the platform escape hatches (`node:` imports, global `console`/`Date`/`process.env`,
 // `JSON.parse` over Schema). Scoped rather than extended, because those rules would also flag the
 // plain Node code elsewhere (scripts/, the workspace-conventions test). The rules need the Oxlint
-// patch that `prepare` applies (README, _Effect_).
+// patch that `prepare` applies (BASELINE.md, _Effect_).
 const EFFECT_PACKAGES = ["tools/ready-agent/**"];
 
 // Ultracite's vitest preset, taught that @effect/vitest's `it.effect` and friends are test blocks
@@ -51,22 +51,12 @@ export default defineConfig({
     // Reformatting them would make every line the formatter touches a local edit, which then
     // conflicts with each upstream change to that line when `/rebaseline` merges it in.
     ignorePatterns: [...IGNORE_PATTERNS, ".agents/skills/**"],
-    overrides: [
-      {
-        // `vp config` runs on every install and rewrites its block in AGENTS.md hard-wrapped at
-        // 80 columns; Ultracite's `proseWrap: "never"` would then fail `vp check` in every fresh
-        // checkout, CI included. The file's own paragraphs are one line each anyway.
-        files: ["AGENTS.md"],
-        options: { proseWrap: "preserve" },
-      },
-    ],
   },
   lint: {
     // Ultracite's presets carry the rule set, and where they disagree with this block they win:
     // an `overrides` entry in an extended preset beats the same rule in this config's own
     // `overrides`. This block holds only what is particular to this repo. A project adds the
-    // presets for what it uses (React, Next.js, TanStack, shadcn, Effect); the README's
-    // _Lint presets_ section lists them and what each needs installed.
+    // presets for what it uses; BASELINE.md's _Lint presets_ section lists them.
     extends: [core, vitestWithEffect, antiSlop],
     ignorePatterns: IGNORE_PATTERNS,
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],

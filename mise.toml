@@ -1,6 +1,4 @@
-# Tools Vite+ does not provide, plus Node. Node lives outside Vite+'s managed runtime so one
-# tool owns it: run `vp env off node` once per machine and Vite+ uses mise's Node, while still
-# managing pnpm from `devEngines` in package.json.
+# Tools Vite+ does not provide, plus Node (BASELINE.md, _Prerequisites_, says why Node is here).
 #
 # The Node version is `.node-version`, the one file mise, Vite+, and CI's setup-vp all read.
 # Keep it inside `engines.node`.
@@ -8,11 +6,10 @@
 idiomatic_version_file_enable_tools = ["node"]
 
 [tools]
-# Exact, like every version in the workspace (AGENTS.md); taze bumps only what pnpm installs, so
-# these move by hand.
+# Exact, like every version in the workspace; taze bumps only what pnpm installs, so these move
+# by hand.
 gitleaks = "8.30.1"
 # Exact: typos grows its dictionary in patch releases, so any float can fail CI on unchanged code.
 typos = "1.50.3"
-# Browser automation for agents; the `agent-browser` skill drives it. Its first run on a machine
-# needs `agent-browser install` to download a Chrome, which the skill says.
+# Browser automation for agents; the `agent-browser` skill drives it and says how to set it up.
 "npm:agent-browser" = "0.38.2"

@@ -5,8 +5,8 @@ on:
     - cron: "0 9 * * 1" # Mondays, 09:00 UTC
   workflow_dispatch:
 
-# The job pushes and opens the PR with BUMP_BOT_TOKEN, not GITHUB_TOKEN: GitHub runs no
-# workflows on a PR that GITHUB_TOKEN opened, so CI would never check the bump.
+# The job pushes and opens the PR with BUMP_BOT_TOKEN, not GITHUB_TOKEN (BASELINE.md, Manual
+# GitHub settings, says why).
 permissions:
   contents: read
 
@@ -29,7 +29,7 @@ jobs:
           BUMP_BOT_TOKEN: ${{ secrets.BUMP_BOT_TOKEN }}
         run: |
           if [ -z "$BUMP_BOT_TOKEN" ]; then
-            echo "::error::Set the BUMP_BOT_TOKEN repository secret (README, Manual GitHub settings)."
+            echo "::error::Set the BUMP_BOT_TOKEN repository secret (BASELINE.md, Manual GitHub settings)."
             exit 1
           fi
 

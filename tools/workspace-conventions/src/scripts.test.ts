@@ -1,6 +1,6 @@
 // Script names are a contract between packages and the root: `vp run -r <name>` reaches every
-// package that defines `<name>`, so a bare name means "fan this out". AGENTS.md states the rule;
-// this test is what holds the workspace to it, from inside the gate's `vp run -r test`.
+// package that defines `<name>`, so a bare name means "fan this out". This test holds the workspace
+// to the names below, from inside the gate's `vp run -r test`.
 
 import { globSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
