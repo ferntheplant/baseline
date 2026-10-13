@@ -1,0 +1,85 @@
+name: Dependency bumps
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Mondays, 09:00 UTC
+  workflow_dispatch:
+
+# The job pushes and opens the PR with BUMP_BOT_TOKEN, not GITHUB_TOKEN: GitHub runs no
+# workflows on a PR that GITHUB_TOKEN opened, so CI would never check the bump.
+permissions:
+  contents: read
+
+# A manual run while the scheduled one is in flight would push to the same branch.
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Require BUMP_BOT_TOKEN
+        env:
+          BUMP_BOT_TOKEN: ${{ secrets.BUMP_BOT_TOKEN }}
+        run: |
+          if [ -z "$BUMP_BOT_TOKEN" ]; then
+            echo "::error::Set the BUMP_BOT_TOKEN repository secret (README, Manual GitHub settings)."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Vite+
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version-file: .node-version
+          cache: true
+
+      - name: Install dependencies
+        run: vp install --frozen-lockfile
+
+      # Minor and patch only, and exact versions included (`--include-locked`), since every
+      # version here is exact. taze skips what `updateConfig.ignoreDependencies` in
+      # pnpm-workspace.yaml holds back, and waits out pnpm's `minimumReleaseAge` before taking a
+      # release. Actions are left to the report below: a token that rewrites workflow files needs
+      # the Workflows permission too.
+      - name: Bump dependencies
+        run: vp exec taze minor --recursive --include-locked --write --no-github-actions
+
+      - name: Update the lockfile
+        run: vp install --no-frozen-lockfile --lockfile-only
+
+      # Runs after the bump, so taze lists only what this PR leaves behind: majors and actions.
+      # It skips the held-back dependencies here too, and so does `vp outdated`, so the one that
+      # sets their pace, vite-plus, is checked against npm directly.
+      - name: Write the PR body
+        env:
+          NO_COLOR: "1"
+        run: |
+          current=$(yq '.catalog["vite-plus"]' pnpm-workspace.yaml)
+          latest=$(npm view vite-plus version)
+          {
+            echo "Minor and patch bumps from taze. CI runs the full gate on this PR; merge it when that passes."
+            if [ "$current" != "$latest" ]; then
+              echo
+              echo "**Vite+ $latest is out** (this repo is on $current). It is upgraded by hand, with the rest of \`updateConfig.ignoreDependencies\` in \`pnpm-workspace.yaml\`."
+            fi
+            echo
+            echo "Still behind after this PR, majors and GitHub Actions:"
+            echo
+            echo '```'
+            vp exec taze major --recursive --include-locked
+            echo '```'
+          } > "$RUNNER_TEMP/pr-body.md"
+
+      - name: Open or update the PR
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.BUMP_BOT_TOKEN }}
+          branch: deps/weekly-bumps
+          commit-message: "deps: bump minor and patch versions"
+          title: "deps: bump minor and patch versions"
+          body-path: ${{ runner.temp }}/pr-body.md
+          delete-branch: true

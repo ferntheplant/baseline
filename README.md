@@ -8,9 +8,10 @@ A Vite+ monorepo template: the toolchain setup that every repo here starts from,
 | --- | --- |
 | [`vite.config.ts`](./vite.config.ts) | Oxlint and Oxfmt from Ultracite's presets (see [Lint presets](#lint-presets)), staged-file checks, Vitest defaults |
 | [`tsconfig.json`](./tsconfig.json) | Strict TypeScript, bundler resolution, no implicit `any`, no unchecked index access |
-| [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) | Workspace globs and the dependency catalog |
+| [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) | Workspace globs, the dependency catalog at exact versions, and what upgrades by hand; see [Dependency versions](#dependency-versions) |
 | [`commitlint.config.ts`](./commitlint.config.ts) | Conventional Commits, with the allowed type list |
 | [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) | CI; see [What runs where](#what-runs-where) |
+| [`.github/workflows/dependency-bumps.yml`](./.github/workflows/dependency-bumps.yml) | A weekly PR bumping minor and patch versions; see [Dependency versions](#dependency-versions) |
 | [`fallow.toml`](./fallow.toml) | Dead-code, duplication, and complexity analysis |
 | `sherif` in [`package.json`](./package.json) | Monorepo `package.json` lint: consistent versions, private root, no empty fields |
 | [`mise.toml`](./mise.toml), [`.node-version`](./.node-version) | gitleaks, typos, and Node, installed by mise |
@@ -19,7 +20,7 @@ A Vite+ monorepo template: the toolchain setup that every repo here starts from,
 | [`ABSTRACT.md`](./ABSTRACT.md), [`CONTEXT.md`](./CONTEXT.md) | What the project is, and what its words mean — empty, to fill in |
 | [`AGENTS.md`](./AGENTS.md) | Agent instructions, with `CLAUDE.md` symlinked to it |
 | [`tools/ready-agent/`](./tools/ready-agent/) | `vp run ready:agent`: the gate condensed for agents, written in Effect v4 — keep it |
-| [`tools/workspace-conventions/`](./tools/workspace-conventions/) | A test that holds every package to the script-naming rules in `AGENTS.md` — keep it |
+| [`tools/workspace-conventions/`](./tools/workspace-conventions/) | Tests that hold every package to the script-naming rules in `AGENTS.md`, and every version to an exact pin — keep it |
 | [`.agents/skills/`](./.agents/skills/) | Agent skills, with `.claude/` symlinked to `.agents/` |
 
 `prepare` runs on install, so the git hooks install themselves and the agent symlinks repair themselves on the first `vp install`.
@@ -102,7 +103,7 @@ Tailwind is the one to watch for: the moment any app, package, or tool takes on 
 
 Ultracite has presets for other frameworks too (Vue, Svelte, Astro, Angular, and more); the [`ultracite/oxlint/*` exports](https://github.com/haydenbleasel/ultracite/tree/main/packages/cli/config/oxlint) list them, each with a header saying what it needs.
 
-Ultracite lists every rule by name, so a preset that names a rule the bundled Oxlint lacks fails to load the whole config (`Rule '…' not found in plugin '…'`). The catalog pins `ultracite` exactly for that reason: upgrade it together with `vite-plus`, and check `vp toolchain oxlint` against the Oxlint range in Ultracite's `peerDependencies`.
+Ultracite lists every rule by name, so a preset that names a rule the bundled Oxlint lacks fails to load the whole config (`Rule '…' not found in plugin '…'`). The weekly dependency bump holds `ultracite` back for that reason: upgrade it together with `vite-plus`, and check `vp toolchain oxlint` against the Oxlint range in Ultracite's `peerDependencies`.
 
 ### Effect
 
@@ -112,7 +113,19 @@ The rules apply only to the packages listed in `EFFECT_PACKAGES` in [`vite.confi
 
 Effect's fixes are reported as suggestions, so `vp check --fix` does not apply them; the diagnostic says what to change. For Effect diagnostics in the editor, `effect-tsgo setup` installs the Effect language service; then set `"diagnostics": false` on its `@effect/language-service` plugin entry in `tsconfig.json`, so each diagnostic is reported once, by Oxlint.
 
-The patch renames the original binaries to `*.original` beside the replacements, so pnpm's shared store is untouched, and `effect-tsgo unpatch --oxlint` restores them. Each `@effect/tsgo` release supports a fixed list of Oxlint versions (the _Supported Package Versions_ table in its README), so the catalog pins it exactly, and it is a third package to check before upgrading `vite-plus`. The Effect packages themselves are pinned exactly too, because v4's platform modules are unstable APIs that may change between versions.
+The patch renames the original binaries to `*.original` beside the replacements, so pnpm's shared store is untouched, and `effect-tsgo unpatch --oxlint` restores them. Each `@effect/tsgo` release supports a fixed list of Oxlint versions (the _Supported Package Versions_ table in its README), so the weekly dependency bump holds it back, and it is a third package to check before upgrading `vite-plus`. The Effect packages themselves do take the weekly bump, but v4's platform modules are unstable APIs that may change between versions, so read the changelog on an Effect bump even when CI passes.
+
+## Dependency versions
+
+Every version the workspace names is exact: the catalog in [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) holds `1.2.3`, never `^1.2.3`, and packages depend on `catalog:`. `savePrefix: ""` makes `vp add` write versions that way, and a test in [`tools/workspace-conventions`](./tools/workspace-conventions/) fails the gate on a range or on a package that names a version itself. An upgrade is therefore always a diff in the catalog.
+
+Those diffs come from [`dependency-bumps.yml`](./.github/workflows/dependency-bumps.yml). Every Monday it runs [taze](https://github.com/antfu-collective/taze) over the workspace, bumps every catalog entry to its newest minor or patch release, and opens one PR on the `deps/weekly-bumps` branch, or updates it if one is already open. CI runs the full gate on it. The PR body lists what is still behind: majors, GitHub Actions, and a new Vite+ release, if there is one. To run the same bump locally:
+
+```bash
+vp exec taze minor --recursive --include-locked --write && vp install
+```
+
+Some dependencies are upgraded by hand, because they have to move together with the Oxlint that `vite-plus` bundles. They are listed under `updateConfig.ignoreDependencies` in `pnpm-workspace.yaml`, with a comment saying why, and both taze and `vp update` skip them. taze also waits out pnpm's `minimumReleaseAge` before it takes a new release.
 
 ## What runs where
 
@@ -130,7 +143,7 @@ CI runs `vp run ready` in full, so every check in the gate runs there too. The g
 
 ## Manual GitHub settings
 
-Three things live in repository settings rather than in this repo, so they have to be set once per repo after publishing.
+Four things live in repository settings rather than in this repo, so they have to be set once per repo after publishing.
 
 ### 1. Protect `main` with a ruleset
 
@@ -170,3 +183,15 @@ gh api -X PATCH "repos/{owner}/{repo}" -f squash_merge_commit_title=PR_TITLE -f 
 ```
 
 Squash-only merging keeps the linear history the ruleset requires. The squash commit takes the PR title as its subject, which is why CI lints that title, and the PR description as its body, so the description is what `main`'s history records about the change.
+
+### 4. Give the dependency bump a token
+
+GitHub runs no workflows on a PR opened with the workflow's own `GITHUB_TOKEN`, so the weekly bump PR would never get CI. The workflow opens it with a token you provide instead, and fails with a message naming this section until there is one.
+
+Create a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new) scoped to this repository only, with **Contents** and **Pull requests** set to read and write. Save it as a repository secret named `BUMP_BOT_TOKEN`:
+
+```bash
+gh secret set BUMP_BOT_TOKEN
+```
+
+Fine-grained tokens expire; when the bump starts failing on authentication, make a new one. Then run **Actions → Dependency bumps → Run workflow** once to check it works.
