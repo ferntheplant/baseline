@@ -22,6 +22,7 @@ A Vite+ monorepo template: the toolchain setup that every repo here starts from,
 | [`tools/ready-agent/`](./tools/ready-agent/) | `vp run ready:agent`: the gate condensed for agents, written in Effect v4 — keep it |
 | [`tools/workspace-conventions/`](./tools/workspace-conventions/) | Tests that hold every package to the script-naming rules in `AGENTS.md`, and every version to an exact pin — keep it |
 | [`.agents/skills/`](./.agents/skills/) | Agent skills, with `.claude/` symlinked to `.agents/` |
+| [`.agents/vendored-skills.jsonc`](./.agents/vendored-skills.jsonc) | Where each copied skill came from and what was changed locally; see [Taking upstream changes](#taking-upstream-changes) |
 
 `prepare` runs on install, so the git hooks install themselves and the agent symlinks repair themselves on the first `vp install`.
 
@@ -68,12 +69,13 @@ The `CLAUDE.md` and `.claude/` symlinks are created on install by [`scripts/link
 
 ## Then, in the new repo
 
-1. Rename the root package: `@baseline/root` → `@<yourname>/root` in `package.json`.
-2. Rename or replace `apps/example`. It exists because `vp run ready` fans out to every package's `test` and `build` scripts, and the packages under `tools/` have only `test`; with no package that builds, `vp run -r build` fails with `Task "build" not found`. Keep at least one package with a `build` script, and the gate stays honest.
-3. Fill in [`ABSTRACT.md`](./ABSTRACT.md) (what this project is, and what it is not) and start [`CONTEXT.md`](./CONTEXT.md) with the project's first terms, then put the project's name in the [`AGENTS.md`](./AGENTS.md) heading.
-4. Replace this README.
-5. `vp run ready`, then make the first commit and push it to a new GitHub repo.
-6. Configure the GitHub settings below — they cannot be committed.
+1. Record which baseline commit the repo came from: run `/rebaseline init` in Claude Code, or ask another agent to run the init step of the `rebaseline` skill. It writes `.baseline.jsonc`, which is how the repo takes baseline's later changes; see [Taking upstream changes](#taking-upstream-changes).
+2. Rename the root package: `@baseline/root` → `@<yourname>/root` in `package.json`.
+3. Rename or replace `apps/example`. It exists because `vp run ready` fans out to every package's `test` and `build` scripts, and the packages under `tools/` have only `test`; with no package that builds, `vp run -r build` fails with `Task "build" not found`. Keep at least one package with a `build` script, and the gate stays honest.
+4. Fill in [`ABSTRACT.md`](./ABSTRACT.md) (what this project is, and what it is not) and start [`CONTEXT.md`](./CONTEXT.md) with the project's first terms, then put the project's name in the [`AGENTS.md`](./AGENTS.md) heading.
+5. Replace this README.
+6. `vp run ready`, then make the first commit and push it to a new GitHub repo.
+7. Configure the GitHub settings below — they cannot be committed.
 
 ## Daily commands
 
@@ -84,6 +86,20 @@ vp check --fix     # format + autofix lint
 vp test            # run tests
 vp exec fallow     # dead code, duplication, complexity
 ```
+
+## Taking upstream changes
+
+Some files here are copies of files maintained somewhere else, edited in place: the skills in `.agents/skills/` that came from other repos, and, in a repo generated from this template, every file the template owns. Each copy records its **base**, the upstream commit it was last merged from. `/rebaseline`, the [`rebaseline`](./.agents/skills/rebaseline/SKILL.md) skill, takes upstream changes as a three-way merge from that base, so a local edit survives unless upstream changed the same lines:
+
+```text
+/rebaseline              # in a generated repo: take this template's changes since .baseline.jsonc's base
+/rebaseline skills       # take upstream changes into every skill in .agents/vendored-skills.jsonc
+/rebaseline add <repo> <path>   # copy in a new skill and record it
+```
+
+Where both sides changed the same lines, the agent decides using the comment that explains each local edit in the manifest, and it brings conflicts it can't settle that way to you. So an edit to a copied file also gets a comment on its manifest entry saying why (`AGENTS.md` says the same to agents). An edit with no comment looks like drift, and the next merge may take upstream's version over it.
+
+The formatter skips `.agents/skills/`. Otherwise every line it reformatted would count as a local edit, and conflict with each later upstream change to that line. Each source's license is copied to [`.agents/licenses/`](./.agents/licenses/).
 
 ## Lint presets
 
