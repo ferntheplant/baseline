@@ -18,6 +18,11 @@ jobs:
   bump:
     runs-on: ubuntu-latest
 
+    # Install wires up the repo's git hooks, and the pre-commit one needs gitleaks and typos from
+    # mise. The bot's commit skips them: CI runs gitleaks and the whole gate on the PR it opens.
+    env:
+      VP_GIT_HOOKS: "0"
+
     steps:
       - name: Require BUMP_BOT_TOKEN
         env:
