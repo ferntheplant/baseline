@@ -34,7 +34,7 @@ Install [Vite+](https://viteplus.dev/guide/) and [mise](https://mise.jdx.dev/get
 vp env off node
 ```
 
-Vite+ manages Node too by default, and two tools managing one runtime can download it twice or pick different versions for different commands. With Node switched off, Vite+ uses the Node that mise provides and still manages pnpm from `devEngines` in `package.json`.
+Vite+ manages Node too by default, and two tools managing one runtime can download it twice or pick different versions for different commands. With Node switched off, Vite+ uses the Node that mise provides and still manages pnpm from `devEngines` in `package.json`; [`mise.toml`](./mise.toml) disables pnpm in the repo, so a pnpm in your global mise config cannot shadow it.
 
 In each clone, install the tools [`mise.toml`](./mise.toml) names; the pre-commit hook refuses to commit until gitleaks and typos are installed:
 
