@@ -1,70 +1,45 @@
+import oxfmt from "ultracite/oxfmt";
+import core from "ultracite/oxlint/core";
+import vitest from "ultracite/oxlint/vitest";
 import { defineConfig } from "vite-plus";
 
-// Generated output, build artifacts, and tool caches: never formatted, never linted.
-const IGNORE_PATTERNS = ["**/*.gen.ts", "**/dist/**", "**/build/**", "**/coverage/**", ".tanstack/**", ".wrangler/**"];
+// Ultracite's list (dependencies, build output, generated code, lockfiles) plus the TanStack
+// cache it does not know about. oxlint does not inherit `ignorePatterns` from `extends`, so both
+// blocks name the list themselves.
+const IGNORE_PATTERNS = [...(core.ignorePatterns ?? []), "**/.tanstack"];
 
 export default defineConfig({
-  root: ".",
-  logLevel: "error",
-  staged: {
-    // `--force-exclude` applies `_typos.toml`'s excludes to the file paths lint-staged passes in,
-    // which typos otherwise checks unconditionally.
-    "*": ["typos --force-exclude", "vp check --fix"],
-  },
   fmt: {
+    ...oxfmt,
     ignorePatterns: IGNORE_PATTERNS,
-    useTabs: false,
-    tabWidth: 2,
-    semi: true,
-    singleQuote: false,
-    trailingComma: "all",
-    printWidth: 120,
-    insertFinalNewline: true,
-    sortImports: true,
-    sortPackageJson: true,
+    overrides: [
+      {
+        // `vp config` runs on every install and rewrites its block in AGENTS.md hard-wrapped at
+        // 80 columns; Ultracite's `proseWrap: "never"` would then fail `vp check` in every fresh
+        // checkout, CI included. The file's own paragraphs are one line each anyway.
+        files: ["AGENTS.md"],
+        options: { proseWrap: "preserve" },
+      },
+    ],
   },
   lint: {
-    plugins: ["typescript", "unicorn", "oxc", "react"],
-    jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
+    // Ultracite's presets carry the rule set, and where they disagree with this block they win:
+    // an `overrides` entry in an extended preset beats the same rule in this config's own
+    // `overrides`. This block holds only what is particular to this repo. A project adds the
+    // presets for what it uses (React, Next.js, TanStack, shadcn, Effect); the README's
+    // _Lint presets_ section lists them and what each needs installed.
+    extends: [core, vitest],
     ignorePatterns: IGNORE_PATTERNS,
+    jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     options: {
+      maxWarnings: 0,
       typeAware: true,
       typeCheck: true,
-      maxWarnings: 0,
-    },
-    categories: {
-      correctness: "error",
     },
     rules: {
-      "vite-plus/prefer-vite-plus-imports": "error",
-      "typescript/no-explicit-any": "error",
-      "react/no-array-index-key": "error",
-      "no-console": ["error", { allow: ["debug", "time", "timeEnd", "assert"] }],
-      "no-unused-vars": [
-        "error",
-        {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_",
-          fix: {
-            imports: "safe-fix",
-            variables: "fix",
-          },
-        },
-      ],
-      "typescript/consistent-type-imports": "error",
-      "typescript/no-non-null-assertion": "error",
-      "no-param-reassign": "error",
-      "typescript/prefer-as-const": "error",
-      "default-param-last": "error",
-      "react/self-closing-comp": "error",
-      "react/rules-of-hooks": "error",
-      "typescript/no-unnecessary-template-expression": "error",
-      "eslint/prefer-template": "error",
-      "unicorn/prefer-number-properties": "error",
-      "typescript/no-inferrable-types": "error",
-      "eslint/no-else-return": "error",
-      "eslint/no-restricted-imports": [
+      // fallow already fails the gate on import cycles, across the whole workspace graph.
+      "import/no-cycle": "off",
+      "no-restricted-imports": [
         "error",
         {
           patterns: [
@@ -75,12 +50,11 @@ export default defineConfig({
           ],
         },
       ],
-      "typescript/no-floating-promises": "error",
-    },
-    env: {
-      builtin: true,
+      "vite-plus/prefer-vite-plus-imports": "error",
     },
   },
+  logLevel: "error",
+  root: ".",
   run: {
     cache: true,
     tasks: {
@@ -88,19 +62,24 @@ export default defineConfig({
       // `cache: false`: the gate it wraps caches per step already, and under script caching the
       // runner's file tracking makes the nested `vp run` fail to spawn (os error 22).
       "ready:agent": {
-        command: "node tools/ready-agent/src/main.ts",
         cache: false,
+        command: "node tools/ready-agent/src/main.ts",
       },
     },
   },
+  staged: {
+    // `--force-exclude` applies `_typos.toml`'s excludes to the file paths lint-staged passes in,
+    // which typos otherwise checks unconditionally.
+    "*": ["typos --force-exclude", "vp check --fix"],
+  },
   test: {
+    // Suites that stand up a real harness in `beforeAll` need the same margin as `testTimeout`.
+    hookTimeout: 30_000,
     passWithNoTests: false,
     // Vitest's 5s default is smaller than the waits real suites declare (an SSE reader asking
     // for 10s, a process probe allowing 20s), so the generic "Test timed out in 5000ms" wins
     // over the assertion that would have said what actually broke. A budget must exceed the
     // longest wait a test can perform; passing tests never spend it.
     testTimeout: 30_000,
-    // Suites that stand up a real harness in `beforeAll` need the same margin.
-    hookTimeout: 30_000,
   },
 });

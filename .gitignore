@@ -35,7 +35,7 @@ build
 *.sln
 *.sw?
 
-# A symlink to `AGENTS.md`, created on install by `scripts/link-agents.mjs`; its header says why
+# A symlink to `AGENTS.md`, created on install by `scripts/link-agents.ts`; its header says why
 # it is not committed.
 CLAUDE.md
 

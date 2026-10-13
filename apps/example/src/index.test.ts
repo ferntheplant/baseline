@@ -1,7 +1,9 @@
-import { expect, test } from "vite-plus/test";
+import { describe, expect, it } from "vite-plus/test";
 
 import { greet } from "./index.ts";
 
-test("greets by name", () => {
-  expect(greet("world")).toBe("Hello, world!");
+describe(greet, () => {
+  it("greets by name", () => {
+    expect(greet("world")).toBe("Hello, world!");
+  });
 });

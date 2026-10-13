@@ -1,5 +1,5 @@
 import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { basename, join, relative } from "node:path";
+import path from "node:path";
 
 // Saves a failed gate's full output where the agent can read it when the condensed report had
 // to omit lines. One file per run, named by time and process id, so concurrent gates (several
@@ -12,7 +12,7 @@ const KEEP = 100;
 
 // `2026-09-30T01-40-12-4821.log`: the timestamp leads, so name order is roughly age order. Only
 // roughly: it is whole seconds, pids within a second compare as text, and clocks step back.
-const SAVED = /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d+\.log$/;
+const SAVED = /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d+\.log$/u;
 
 // Deletes the oldest saved outputs, never `own`: the file this run just wrote and is about to
 // name in its report, which would otherwise be deleted whenever it sorts first.
@@ -22,7 +22,9 @@ const prune = (dir: string, own: string, keep: number): void => {
     .toSorted();
   const excess = Math.max(0, others.length - (keep - 1));
   // `force`: a concurrent run pruning the same directory may have removed the file already.
-  for (const name of others.slice(0, excess)) rmSync(join(dir, name), { force: true });
+  for (const name of others.slice(0, excess)) {
+    rmSync(path.join(dir, name), { force: true });
+  }
 };
 
 export const saveFullOutput = (
@@ -30,15 +32,15 @@ export const saveFullOutput = (
   output: string,
   now: Date,
   pid: number,
-  keep = KEEP,
+  keep = KEEP
 ): string | undefined => {
-  const dir = join(root, "node_modules", ".cache", "ready-agent");
-  const file = join(
+  const dir = path.join(root, "node_modules", ".cache", "ready-agent");
+  const file = path.join(
     dir,
     `${now
       .toISOString()
       .replaceAll(":", "-")
-      .replace(/\.\d+Z$/, "")}-${pid}.log`,
+      .replace(/\.\d+Z$/u, "")}-${pid}.log`
   );
   try {
     mkdirSync(dir, { recursive: true });
@@ -48,9 +50,9 @@ export const saveFullOutput = (
     return undefined;
   }
   try {
-    prune(dir, basename(file), keep);
+    prune(dir, path.basename(file), keep);
   } catch {
     // The file this run needs is written; a failed cleanup only postpones pruning to next time.
   }
-  return relative(root, file);
+  return path.relative(root, file);
 };

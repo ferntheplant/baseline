@@ -4,22 +4,22 @@ A Vite+ monorepo template: the toolchain setup that every repo here starts from,
 
 ## What's in the box
 
-| File                                                           | What it settles                                                                                          |
-| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| [`vite.config.ts`](./vite.config.ts)                           | Oxlint rules, Oxfmt style (120 cols, double quotes, sorted imports), staged-file checks, Vitest defaults |
-| [`tsconfig.json`](./tsconfig.json)                             | Strict TypeScript, bundler resolution, no implicit `any`, no unchecked index access                      |
-| [`pnpm-workspace.yaml`](./pnpm-workspace.yaml)                 | Workspace globs and the dependency catalog                                                               |
-| [`commitlint.config.ts`](./commitlint.config.ts)               | Conventional Commits, with the allowed type list                                                         |
-| [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)       | CI; see [What runs where](#what-runs-where)                                                              |
-| [`fallow.toml`](./fallow.toml)                                 | Dead-code, duplication, and complexity analysis                                                          |
-| `sherif` in [`package.json`](./package.json)                   | Monorepo `package.json` lint: consistent versions, private root, no empty fields                         |
-| [`mise.toml`](./mise.toml), [`.node-version`](./.node-version) | gitleaks, typos, and Node, installed by mise                                                             |
-| [`_typos.toml`](./_typos.toml)                                 | Spell-check exceptions                                                                                   |
-| [`.vite-hooks/`](./.vite-hooks/)                               | Git hooks; see [What runs where](#what-runs-where)                                                       |
-| [`ABSTRACT.md`](./ABSTRACT.md), [`CONTEXT.md`](./CONTEXT.md)   | What the project is, and what its words mean — empty, to fill in                                         |
-| [`AGENTS.md`](./AGENTS.md)                                     | Agent instructions, with `CLAUDE.md` symlinked to it                                                     |
-| [`tools/ready-agent/`](./tools/ready-agent/)                   | `vp run ready:agent`: the gate condensed for agents — keep it                                            |
-| [`.agents/skills/`](./.agents/skills/)                         | Agent skills, with `.claude/` symlinked to `.agents/`                                                    |
+| File | What it settles |
+| --- | --- |
+| [`vite.config.ts`](./vite.config.ts) | Oxlint and Oxfmt from Ultracite's presets (see [Lint presets](#lint-presets)), staged-file checks, Vitest defaults |
+| [`tsconfig.json`](./tsconfig.json) | Strict TypeScript, bundler resolution, no implicit `any`, no unchecked index access |
+| [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) | Workspace globs and the dependency catalog |
+| [`commitlint.config.ts`](./commitlint.config.ts) | Conventional Commits, with the allowed type list |
+| [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) | CI; see [What runs where](#what-runs-where) |
+| [`fallow.toml`](./fallow.toml) | Dead-code, duplication, and complexity analysis |
+| `sherif` in [`package.json`](./package.json) | Monorepo `package.json` lint: consistent versions, private root, no empty fields |
+| [`mise.toml`](./mise.toml), [`.node-version`](./.node-version) | gitleaks, typos, and Node, installed by mise |
+| [`_typos.toml`](./_typos.toml) | Spell-check exceptions |
+| [`.vite-hooks/`](./.vite-hooks/) | Git hooks; see [What runs where](#what-runs-where) |
+| [`ABSTRACT.md`](./ABSTRACT.md), [`CONTEXT.md`](./CONTEXT.md) | What the project is, and what its words mean — empty, to fill in |
+| [`AGENTS.md`](./AGENTS.md) | Agent instructions, with `CLAUDE.md` symlinked to it |
+| [`tools/ready-agent/`](./tools/ready-agent/) | `vp run ready:agent`: the gate condensed for agents — keep it |
+| [`.agents/skills/`](./.agents/skills/) | Agent skills, with `.claude/` symlinked to `.agents/` |
 
 `prepare` runs on install, so the git hooks install themselves and the agent symlinks repair themselves on the first `vp install`.
 
@@ -62,7 +62,7 @@ vp create github:ferntheplant/baseline --git --no-interactive && mv baseline <na
 
 `git clone https://github.com/ferntheplant/baseline.git <name>` works too, if you would rather delete `.git` yourself; then run `mise trust && mise install && vp install` in the clone.
 
-The `CLAUDE.md` and `.claude/` symlinks are created on install by [`scripts/link-agents.mjs`](./scripts/link-agents.mjs) rather than committed; its header says why. Nothing to do by hand, but if agent instructions ever go missing in a generated repo, that is where to look.
+The `CLAUDE.md` and `.claude/` symlinks are created on install by [`scripts/link-agents.ts`](./scripts/link-agents.ts) rather than committed; its header says why. Nothing to do by hand, but if agent instructions ever go missing in a generated repo, that is where to look.
 
 ## Then, in the new repo
 
@@ -83,17 +83,46 @@ vp test            # run tests
 vp exec fallow     # dead code, duplication, complexity
 ```
 
+## Lint presets
+
+The lint rules and format style come from [Ultracite](https://www.ultracite.ai/)'s Oxlint and Oxfmt presets, which [`vite.config.ts`](./vite.config.ts) extends: `core` for TypeScript and `vitest` for test files. The `lint` block itself holds only what is particular to this repo: absolute imports, Vite+ imports, and import cycles left to fallow. Where a preset and that block disagree, the preset wins: an `overrides` entry in an extended preset beats the same rule in the block's own `overrides`.
+
+Everything framework-specific is opt-in, so a project adds the presets for what it actually uses to `lint.extends`:
+
+| Project uses | Add to `extends` | Also needs |
+| --- | --- | --- |
+| React | `react` from `ultracite/oxlint/react` | nothing |
+| Next.js | `react`, and `next` from `ultracite/oxlint/next` | nothing |
+| TanStack Router or Start | `react`, and `tanstack` from `ultracite/oxlint/tanstack` | nothing |
+| A Tailwind v4 design system | `shadcn` from `ultracite/oxlint/shadcn` | `@shadcn/lint` installed; the preset's header covers its settings |
+| Effect | `recommended` from `@effect/tsgo/oxlint-presets` | `@effect/tsgo` installed and its Oxlint patch run from `prepare`; see [Effect](#effect) |
+
+Ultracite has presets for other frameworks too (Vue, Svelte, Astro, Angular, and more); the [`ultracite/oxlint/*` exports](https://github.com/haydenbleasel/ultracite/tree/main/packages/cli/config/oxlint) list them, each with a header saying what it needs.
+
+Ultracite lists every rule by name, so a preset that names a rule the bundled Oxlint lacks fails to load the whole config (`Rule '…' not found in plugin '…'`). The catalog pins `ultracite` exactly for that reason: upgrade it together with `vite-plus`, and check `vp toolchain oxlint` against the Oxlint range in Ultracite's `peerDependencies`.
+
+### Effect
+
+Effect's lint rules run inside Oxlint's type-aware pass, through a build of Oxlint and tsgolint that [`@effect/tsgo`](https://github.com/Effect-TS/tsgo/blob/main/docs/README.md) swaps in for the ones Vite+ installed. Unpatched, Oxlint rejects the whole config with `Unknown plugin: 'effecttsgo'`, which is why the patch runs from `prepare` rather than by hand:
+
+1. `vp add -Dw @effect/tsgo`
+2. In `package.json`, run the patch on every install: `"prepare": "node scripts/link-agents.ts && effect-tsgo patch --oxlint && vp config"`. Then run `pnpm run prepare` once: an install with nothing new to install skips `prepare`.
+3. In `vite.config.ts`, `import { recommended } from "@effect/tsgo/oxlint-presets";` and add `recommended` to `lint.extends`. `strict` makes every default-on rule an error; `correctness`, `antipattern`, `effect-native`, and `style` each select one category.
+4. If the editor runs the Effect language service, set `"diagnostics": false` on its `@effect/language-service` plugin entry in `tsconfig.json`, so each diagnostic is reported once, by Oxlint.
+
+The patch renames the original binaries to `*.original` beside the replacements, so pnpm's shared store is untouched, and `effect-tsgo unpatch --oxlint` restores them. Each `@effect/tsgo` release supports a fixed list of Oxlint versions (the _Supported Package Versions_ table in its README), which makes it a third package to check before upgrading `vite-plus`.
+
 ## What runs where
 
-| Check                                 | git hooks       | `vp run ready` | CI                               |
-| ------------------------------------- | --------------- | -------------- | -------------------------------- |
-| gitleaks                              | staged changes  |                | every commit                     |
-| typos                                 | staged files    | whole repo     | whole repo, as ready             |
-| `vp check` (format, lint, type-check) | staged, `--fix` | whole repo     | whole repo, as ready             |
-| sherif                                |                 | whole repo     | whole repo, as ready             |
-| every package's `test` and `build`    |                 | yes            | yes, as ready                    |
-| fallow                                |                 | whole repo     | whole repo, as ready             |
-| commitlint                            | `commit-msg`    |                | each PR commit, and the PR title |
+| Check | git hooks | `vp run ready` | CI |
+| --- | --- | --- | --- |
+| gitleaks | staged changes |  | every commit |
+| typos | staged files | whole repo | whole repo, as ready |
+| `vp check` (format, lint, type-check) | staged, `--fix` | whole repo | whole repo, as ready |
+| sherif |  | whole repo | whole repo, as ready |
+| every package's `test` and `build` |  | yes | yes, as ready |
+| fallow |  | whole repo | whole repo, as ready |
+| commitlint | `commit-msg` |  | each PR commit, and the PR title |
 
 CI runs `vp run ready` in full, so every check in the gate runs there too. The git hooks keep to what finishes in seconds on the staged files; sherif, tests, builds, and fallow need the whole workspace, so they wait for `ready`. gitleaks is the one check CI runs outside `ready`: it scans every commit on the branch, not the working tree, which catches a secret committed with `--no-verify` and later deleted.
 
