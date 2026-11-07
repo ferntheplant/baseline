@@ -1,5 +1,4 @@
 ${PullRequestTitle} (${PullRequestReference})
-
 ${PullRequestDescription}
 
 ${ReviewedOn}

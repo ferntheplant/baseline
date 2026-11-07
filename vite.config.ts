@@ -50,7 +50,13 @@ export default defineConfig({
     // Skills are vendored from other repos and edited in place (`.agents/vendored-skills.jsonc`).
     // Reformatting them would make every line the formatter touches a local edit, which then
     // conflicts with each upstream change to that line when `/rebaseline` merges it in.
-    ignorePatterns: [...IGNORE_PATTERNS, ".agents/skills/**"],
+    // Merge message templates are not Markdown: each line is a part of the commit message, and the
+    // formatter would join them into one paragraph.
+    ignorePatterns: [
+      ...IGNORE_PATTERNS,
+      ".agents/skills/**",
+      ".forgejo/default_merge_message/**",
+    ],
   },
   lint: {
     // Ultracite's presets carry the rule set, and where they disagree with this block they win:
