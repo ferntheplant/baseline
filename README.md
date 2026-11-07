@@ -31,5 +31,5 @@ vp create github:ferntheplant/baseline --git --no-interactive && mv baseline <na
 3. Rename or replace `apps/example`, keeping at least one package with a `build` script; its [`src/index.ts`](./apps/example/src/index.ts) says why.
 4. Fill in [`ABSTRACT.md`](./ABSTRACT.md) (what this project is, and what it is not) and start [`CONTEXT.md`](./CONTEXT.md) with the project's first terms, then put the project's name in the [`AGENTS.md`](./AGENTS.md) heading.
 5. Replace this README with the project's own.
-6. `vp run ready`, then make the first commit and push it to a new GitHub repo.
-7. Configure the [manual GitHub settings](./BASELINE.md#manual-github-settings) — they cannot be committed.
+6. `vp run ready`, then make the first commit and push it to a new Forgejo repo.
+7. Configure the [manual Forgejo settings](./BASELINE.md#manual-forgejo-settings) — they cannot be committed.

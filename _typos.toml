@@ -1,5 +1,5 @@
 [files]
-# `.agents/`, `.github/`, and `.vite-hooks/` hold prose and scripts worth checking; typos skips
+# `.agents/`, `.forgejo/`, and `.vite-hooks/` hold prose and scripts worth checking; typos skips
 # hidden paths by default, so turning that off means excluding `.git/` by hand.
 ignore-hidden = false
 # Generated, and full of hashes and package names that read as misspellings.

@@ -12,7 +12,7 @@ catalogMode: prefer
 savePrefix: ""
 
 # One version of every shared dependency, named once; packages depend on `catalog:`.
-# .github/workflows/dependency-bumps.yml opens a weekly PR bumping these to their newest
+# .forgejo/workflows/dependency-bumps.yml opens a weekly PR bumping these to their newest
 # minor and patch versions, except the ones `updateConfig` below holds back.
 catalog:
   "@commitlint/cli": 21.2.3

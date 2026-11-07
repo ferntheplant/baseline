@@ -10,8 +10,8 @@ This repo's toolchain comes from [baseline](https://github.com/ferntheplant/base
 | [`tsconfig.json`](./tsconfig.json) | Strict TypeScript, bundler resolution, no implicit `any`, no unchecked index access |
 | [`pnpm-workspace.yaml`](./pnpm-workspace.yaml) | Workspace globs, the dependency catalog at exact versions, and what upgrades by hand; see [Dependency versions](#dependency-versions) |
 | [`commitlint.config.ts`](./commitlint.config.ts) | Conventional Commits, with the allowed type list |
-| [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) | CI; see [What runs where](#what-runs-where) |
-| [`.github/workflows/dependency-bumps.yml`](./.github/workflows/dependency-bumps.yml) | A weekly PR bumping minor and patch versions; see [Dependency versions](#dependency-versions) |
+| [`.forgejo/workflows/ci.yml`](./.forgejo/workflows/ci.yml) | CI; see [What runs where](#what-runs-where) |
+| [`.forgejo/workflows/dependency-bumps.yml`](./.forgejo/workflows/dependency-bumps.yml) | A weekly PR bumping minor and patch versions; see [Dependency versions](#dependency-versions) |
 | [`fallow.toml`](./fallow.toml) | Dead-code, duplication, and complexity analysis |
 | `sherif` in [`package.json`](./package.json) | Monorepo `package.json` lint: consistent versions, private root, no empty fields. Every warning fails; only `non-existant-packages` is ignored, because `packages/*` is declared before anything lives there |
 | [`mise.toml`](./mise.toml) | The tools Vite+ does not provide, installed by mise |
@@ -103,7 +103,7 @@ The patch renames the original binaries to `*.original` beside the replacements,
 
 Every version the workspace names is exact and lives in the catalog in [`pnpm-workspace.yaml`](./pnpm-workspace.yaml); packages depend on `catalog:`. [`tools/workspace-conventions`](./tools/workspace-conventions/) fails the gate otherwise, and says why. An upgrade is therefore always a diff in the catalog.
 
-Those diffs come from [`dependency-bumps.yml`](./.github/workflows/dependency-bumps.yml). Every Monday it runs [taze](https://github.com/antfu-collective/taze) over the workspace, bumps every catalog entry to its newest minor or patch release that is at least a week old, and opens one PR on the `deps/weekly-bumps` branch, or updates it if one is already open. CI runs the full gate on it. The PR body lists what is still behind: majors, GitHub Actions, and a new Vite+ release, if there is one. To run the same bump locally:
+Those diffs come from [`dependency-bumps.yml`](./.forgejo/workflows/dependency-bumps.yml). Every Monday it runs [taze](https://github.com/antfu-collective/taze) over the workspace, bumps every catalog entry to its newest minor or patch release that is at least a week old, and opens one PR on the `deps/weekly-bumps` branch, or updates it if one is already open. CI runs the full gate on it. The PR body lists what is still behind: majors, and a new Vite+ release, if there is one. The actions the workflows use are bumped by hand. To run the same bump locally:
 
 ```bash
 vp exec taze minor --recursive --include-locked --maturity-period 7 --write && vp install
@@ -125,57 +125,38 @@ Where both sides changed the same lines, the agent decides using the comment tha
 
 Each source's license is copied to [`.agents/licenses/`](./.agents/licenses/).
 
-## Manual GitHub settings
+## Manual Forgejo settings
+
+The repo lives on [Forgejo](https://forgejo.org/), and CI runs there on Forgejo Actions. A GitHub copy, if there is one, is a read-only mirror of the Forgejo repo and needs none of this.
+
+CI needs a runner with the `ubuntu-latest` label, in an image with git, curl, python3, and Node, and an instance whose `DEFAULT_ACTIONS_URL` is `https://github.com`, since the workflows name their actions as GitHub does (`actions/checkout@v7`).
 
 Four things live in repository settings rather than in this repo, so they have to be set once per repo after publishing.
 
-### 1. Protect `main` with a ruleset
+### 1. Protect `main`
 
-**Settings → Rules → Rulesets → New ruleset → New branch ruleset**
+**Settings → Branches → Add new rule**
 
-- **Name**: `main`
-- **Enforcement status**: Active
-- **Target branches**: Add target → **Include default branch**
-- Enable these rules:
-  - **Restrict deletions**
-  - **Block force pushes**
-  - **Require linear history**
-  - **Require a pull request before merging** — required approvals `0` if you work solo, and check **Dismiss stale pull request approvals when new commits are pushed**
-  - **Require status checks to pass** — check **Require branches to be up to date before merging**, then add the check named **`validate`** (the job id in [`ci.yml`](./.github/workflows/ci.yml); it only appears in the picker after CI has run at least once, so push a first PR before adding it)
-
-Rulesets, not the older "branch protection rules": they are additive, they show which rule blocked a push, and the same ruleset can be reused across repos.
+- **Protected branch name pattern**: `main`
+- **Push**: **Disable push**, so every change reaches `main` through a PR. A protected branch also refuses force pushes and deletion.
+- **Required approvals**: `0` if you work solo, and check **Dismiss stale approvals**
+- **Enable status check**, with the pattern **`CI / validate (pull_request)`**: the workflow's name, the job id in [`ci.yml`](./.forgejo/workflows/ci.yml), and the event. It only appears in the list after CI has run on a PR at least once, so push a first PR before adding it.
+- **Block merge if pull request is outdated**
 
 ### 2. Delete the branch when a PR merges
 
-**Settings → General → Pull Requests → Automatically delete head branches**
-
-Or with the `gh` CLI, from a clone of the repo:
-
-```bash
-gh repo edit --delete-branch-on-merge
-```
+**Settings → Repository → Pull requests**: check **Delete pull request branch after merge by default**.
 
 ### 3. Squash-merge only, with the PR's title and description
 
-**Settings → General → Pull Requests**: uncheck **Allow merge commits** and **Allow rebase merging**, and under **Allow squash merging** set the default commit message to **Pull request title and description**.
+On the same page, uncheck every merge style except **Create squash commit**, and make it the **Default merge style**.
 
-Or with the `gh` CLI:
-
-```bash
-gh repo edit --enable-merge-commit=false --enable-rebase-merge=false
-gh api -X PATCH "repos/{owner}/{repo}" -f squash_merge_commit_title=PR_TITLE -f squash_merge_commit_message=PR_BODY
-```
-
-Squash-only merging keeps the linear history the ruleset requires. The squash commit takes the PR title as its subject and the PR description as its body, so the description is what `main`'s history records about the change.
+Squash-only merging keeps `main`'s history linear. The squash commit takes the PR title as its subject and the PR description as its body, so the description is what `main`'s history records about the change.
 
 ### 4. Give the dependency bump a token
 
-GitHub runs no workflows on a PR opened with the workflow's own `GITHUB_TOKEN`, so the weekly bump PR would never get CI. The workflow opens it with a token you provide instead, and fails with a message naming this section until there is one.
+Forgejo starts no workflow for a change made with the workflow's own token, so the weekly bump PR would never get CI. The workflow pushes and opens it with a token you provide instead, and fails with a message naming this section until there is one.
 
-Create a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new) scoped to this repository only, with **Contents** and **Pull requests** set to read and write. Save it as a repository secret named `BUMP_BOT_TOKEN`:
+Make a bot user for it; a site admin can, with `forgejo admin user create`. Give the bot **Write** access under the repo's **Settings → Collaborators**, then make it an access token with **repository** set to read and write and **user** set to read; the workflow reads the bot's name and email from the token for the commit. Save the token as an Actions secret named `BUMP_BOT_TOKEN`, under the repo's **Settings → Actions → Secrets**, or under your user's settings to share it with every repo you own.
 
-```bash
-gh secret set BUMP_BOT_TOKEN
-```
-
-Fine-grained tokens expire; when the bump starts failing on authentication, make a new one. Then run **Actions → Dependency bumps → Run workflow** once to check it works.
+Then run **Actions → Dependency bumps → Run workflow** once to check it works.

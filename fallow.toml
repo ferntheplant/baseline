@@ -13,7 +13,7 @@ dynamicallyLoaded = [
   "**/migrations/**",
 ]
 # Dependencies run only from a CI workflow, which fallow does not read: taze makes the weekly bump
-# PR (.github/workflows/dependency-bumps.yml). Add a package here only when a workflow is its one
+# PR (.forgejo/workflows/dependency-bumps.yml). Add a package here only when a workflow is its one
 # user; anything else it flags is real.
 ignoreDependencies = ["taze"]
 

@@ -6,9 +6,6 @@ on:
     branches:
       - main
 
-permissions:
-  contents: read
-
 # A new push to a PR supersedes the run already in flight for it. Pushes to main are keyed by
 # commit instead, so every commit that lands there gets a complete run. The workflow name keeps
 # a second workflow from cancelling this one's runs.
