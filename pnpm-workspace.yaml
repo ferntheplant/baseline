@@ -15,14 +15,14 @@ savePrefix: ""
 # .forgejo/workflows/dependency-bumps.yml opens a weekly PR bumping these to their newest
 # minor and patch versions, except the ones `updateConfig` below holds back.
 catalog:
-  "@commitlint/cli": 21.2.3
-  "@commitlint/config-conventional": 21.2.3
-  "@effect/platform-node": 4.0.3
+  "@commitlint/cli": 21.2.4
+  "@commitlint/config-conventional": 21.2.4
+  "@effect/platform-node": 4.1.1
   "@effect/tsgo": 0.51.1
-  "@effect/vitest": 4.0.3
-  "@types/node": 24.19.1
-  effect: 4.0.3
-  fallow: 3.31.0
+  "@effect/vitest": 4.1.1
+  "@types/node": 24.19.2
+  effect: 4.1.1
+  fallow: 3.38.1
   sherif: 1.13.0
   taze: 21.3.0
   typescript: 7.0.2
