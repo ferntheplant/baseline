@@ -12,6 +12,7 @@ This repo's toolchain comes from [baseline](https://github.com/ferntheplant/base
 | [`commitlint.config.ts`](./commitlint.config.ts) | Conventional Commits, with the allowed type list |
 | [`.forgejo/workflows/ci.yml`](./.forgejo/workflows/ci.yml) | CI; see [What runs where](#what-runs-where) |
 | [`.forgejo/workflows/dependency-bumps.yml`](./.forgejo/workflows/dependency-bumps.yml) | A weekly PR bumping minor and patch versions; see [Dependency versions](#dependency-versions) |
+| [`.forgejo/default_merge_message/SQUASH_TEMPLATE.md`](./.forgejo/default_merge_message/SQUASH_TEMPLATE.md) | The squash commit's message; see [Manual Forgejo settings](#3-squash-merge-only-with-the-prs-title-and-description) |
 | [`fallow.toml`](./fallow.toml) | Dead-code, duplication, and complexity analysis |
 | `sherif` in [`package.json`](./package.json) | Monorepo `package.json` lint: consistent versions, private root, no empty fields. Every warning fails; only `non-existant-packages` is ignored, because `packages/*` is declared before anything lives there |
 | [`mise.toml`](./mise.toml) | The tools Vite+ does not provide, installed by mise |
@@ -151,7 +152,7 @@ Four things live in repository settings rather than in this repo, so they have t
 
 On the same page, uncheck every merge style except **Create squash commit**, and make it the **Default merge style**.
 
-Squash-only merging keeps `main`'s history linear. The squash commit takes the PR title as its subject and the PR description as its body, so the description is what `main`'s history records about the change.
+Squash-only merging keeps `main`'s history linear. The squash commit takes the PR title as its subject and the PR description as its body, so the description is what `main`'s history records about the change. That message comes from [`SQUASH_TEMPLATE.md`](./.forgejo/default_merge_message/SQUASH_TEMPLATE.md); without it, Forgejo's default body is only a `Reviewed-on:` link to the PR.
 
 ### 4. Give the dependency bump a token
 
