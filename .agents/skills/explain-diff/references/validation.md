@@ -35,23 +35,27 @@ half is weaker. Read the code first and your own sentence about it second, and
 say that the claim check ran inline when you report the finished page. The
 sub-agent is there to keep whole files out of the main context.
 
-The rest of the step is yours to run. `scripts/validate-output.sh` runs the
+The rest of the step is yours to run. `scripts/validate-output.js` runs the
 checks below that are commands. Give it the drafted page and the short commit
 that the provenance line names. Write both out literally, because a shell
 variable set in an earlier tool call no longer exists. `<this skill's folder>`
 is the folder that holds `SKILL.md`:
 
 ```bash
-sh "<this skill's folder>/scripts/validate-output.sh" \
+node "<this skill's folder>/scripts/validate-output.js" \
   "<work>/draft.html" "<short sha>"
 ```
 
+A `usage:` line means the arguments are wrong. Fix the page path or the short
+commit and run the command again. If the output has no `pass:`, `FAIL:`, or
+`usage:` line, the script did not finish: Node is missing or too old. That is a
+setup failure, not a page failure. Run the command checks in this file by hand,
+and say in your report which ones ran that way. Flatten newlines before you
+search the HTML, because prose wraps in the middle of a phrase.
+
 Do not pass step 8's `$out` as the page. Step 8 defines it as the output
-directory, and what greps do with a directory varies: some exit 2 with an error,
-others report no matches and exit 0. Either way the check is reading the wrong
-thing, and on the implementations that stay quiet it reports success on a page
-it never opened. The script refuses anything that is not a non-empty file, so
-that mistake now fails instead of passing.
+directory. The script refuses anything that is not a non-empty file, so that
+mistake fails instead of reporting on a page the script never opened.
 
 - Every code block is a `<pre>`, or a styled element whose CSS sets
   `white-space: pre` or `white-space: pre-wrap`. Scan each block in the HTML
@@ -59,9 +63,12 @@ that mistake now fails instead of passing.
   line.
 
 - Every code block is HTML-escaped: `&`, `<`, and `>` inside a `<pre>` or
-  `<code>` block appear as `&amp;`, `&lt;`, `&gt;`, with the `.del` and `.add`
-  spans wrapping the escaped text. Raw angle brackets are parsed as tags and
-  silently break the document tree and every anchor below.
+  `<code>` block appear as `&amp;`, `&lt;`, `&gt;`, with the `.del`, `.add`,
+  and `.hi` spans wrapping the escaped text. Raw angle brackets are parsed as
+  tags and silently break the document tree and every anchor below. The script
+  fails on any element inside a `<pre>` or `<code>` other than those spans,
+  which is what a raw `<` before a letter becomes. It does not see a raw end
+  tag such as `</div>` or a raw `<!--`, so read the blocks for those.
 
 - Any Mermaid source in a `<pre class="mermaid">` block is HTML-escaped the same
   way. An unescaped `<br/>` vanishes from the rendered label and a bare `<`
@@ -74,24 +81,33 @@ that mistake now fails instead of passing.
   still opens offline.
 
 - The page linked the references it should have, and every link names the
-  provenance commit in full. The script prints both counts as
-  `references=N linked=M`, then fails on any `/blob/` link whose sha is not the
-  full 40 characters starting with the short commit. It also fails on a link to
-  a `.md` or `.markdown` file that has a line anchor and no `?plain=1`.
+  provenance commit in full. The script prints `references=N linked=M
+  marked-bare=B`, then fails on each reference that is neither inside an
+  `a.srcref` link nor marked `data-bare`, and lists those references. It skips
+  that check when the provenance line says `References are not linked`, the
+  host case, where every reference is bare by design. It also fails
+  on any `/blob/` link whose sha is not the full 40 characters starting with the
+  short commit, and on a link to a `.md` or `.markdown` file that has a line
+  anchor and no `?plain=1`.
 
-  The script's count needs both the `tr` and the `sed`. A `.filename` label
-  reads `class="filename">path:line` when bare and
-  `class="filename"><a ...>path:line` once linked, so without the `sed` the
-  count misses exactly the references that succeeded. And `sed` is line-based,
-  while the template writes that anchor across several lines, so without the
-  `tr` the opening tag is never stripped and the same reference goes uncounted.
-  Either way `links` ends up exceeding `refs` on a page where everything worked.
+  Mark each reference you deliberately leave bare with a `data-bare` attribute,
+  as in `<code data-bare="outside-repo">main.py:8</code>` or
+  `<p class="filename" data-bare="outside-repo">`. The attribute does not change
+  how the page renders. It is how the script tells a deliberate choice from a
+  reference the run forgot to link. The script checks only that the attribute
+  is present; the value is for readers.
 
-  The mismatch scan proves nothing on its own: with no links on
-  the page it finds nothing and reports success, which is exactly when the
-  feature is most broken. So compare the counts first. `links` should equal
-  `refs` minus the references you deliberately left bare, and you should be able
-  to name every one of those and say which of the two reasons applies.
+  The count takes a `<code>` span or `.filename` label that starts with
+  `path.ext:line`. A `host:port` such as `example.com:8080` has the same shape,
+  so the script drops one whose extension is `com`, `org`, `net`, `io`, `dev`,
+  `app`, `local`, `internal`, or `localhost`. The last three are host suffixes
+  rather than top-level domains. `org`, `app`, and `dev` are also file
+  extensions, so an unlinked `notes.org:12` is dropped and never fails. The
+  script accepts that miss over a false FAIL on `host.org:8080`.
+
+  The sha check alone proves nothing: with no links on the page it finds
+  nothing and reports success, which is exactly when the feature is most
+  broken. The count comparison is what catches that case.
 
 - Every table-of-contents link resolves to a section anchor on the page, and
   every section on the page appears in the table of contents.
@@ -110,21 +126,17 @@ that mistake now fails instead of passing.
   options on every page load, so "the first option" points at a different option
   than the one the sentence means, and the reader is sent to the wrong text.
   Name the option by its content instead. This check is mechanical, and the
-  script runs it. The script flattens the quiz section and fails on phrases
-  such as "the first option" or "the latter".
+  script runs it. The script reads the visible text of the quiz section and
+  fails on phrases such as "the first option" or "the latter".
 
-  The `tr` in the script is what makes it work: prose in the HTML wraps, and
-  a line-based `grep` never sees "The" at the end of one line joined to "second
-  option" at the start of the next. Every sample in this repository has a quiz
-  line ending in "the", so the hazard is not rare, it is universal, and a
-  line-based version of this check reports clean on a page that violates the
-  rule. The script confines the search to the quiz, since the template's own
-  comments say things like "the first render". It reads from the tag whose `id`
-  is `quiz`, wherever that attribute sits in the tag, to `</main>`, so an inner
-  `</section>` cannot end the quiz early. That works because the quiz is the
-  last section in `<main>`; a section placed after it would be read as quiz
-  text. It fails when it finds no quiz text at all, because a check that reads
-  nothing reports clean.
+  The script reads the parsed page, not lines of HTML. Prose in the HTML wraps,
+  and every sample in this repository has a quiz line ending in "the", so a
+  phrase split across two lines is common. The parsed text joins those lines.
+  The script confines the search to the element whose `id` is `quiz` inside
+  `<main>`, since the template's own comments say things like "the first
+  render". It skips `<script>`, `<style>`, and `<template>` inside the quiz,
+  because a reader never sees their text. It fails when it finds no quiz text
+  at all, because a check that reads nothing reports clean.
 
   The script then prints a wider sweep, which is advisory rather than pass or
   fail. This one catches an ordinal used on its own, as in "the first names a

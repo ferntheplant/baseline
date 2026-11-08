@@ -2,8 +2,15 @@
 # `.agents/`, `.forgejo/`, and `.vite-hooks/` hold prose and scripts worth checking; typos skips
 # hidden paths by default, so turning that off means excluding `.git/` by hand.
 ignore-hidden = false
-# Generated, and full of hashes and package names that read as misspellings.
-extend-exclude = [".git/", "pnpm-lock.yaml"]
+# Generated, and full of hashes and package names that read as misspellings. The explain-diff
+# validator is a bundle upstream builds from its own source, with its HTML parser's minified
+# entity tables inlined, and it is vendored as is. Its pattern starts `**/` because the pre-commit
+# hook passes absolute paths, which a pattern anchored at the repo root does not match.
+extend-exclude = [
+  ".git/",
+  "pnpm-lock.yaml",
+  "**/.agents/skills/explain-diff/scripts/validate-output.js",
+]
 
 [default]
 extend-ignore-re = [

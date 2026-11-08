@@ -29,22 +29,22 @@
     "agent-browser": {
       "source": "agent-browser",
       "path": "skills/agent-browser",
-      "base": "d9570915f4dd6504dee4070379d2c4f79d81dbb2",
+      "base": "4b0e9f01fa8d214d39bbfe5391257640634fb9a0",
       // Local: the description says when to reach for it (checking a change in a browser) instead
       // of listing upstream's every use; `mise.toml` installs the CLI, so the install line says
-      // so and drops `npx` from `allowed-tools`; the "Why agent-browser" sales pitch is cut.
+      // so; the "Why agent-browser" sales pitch is cut.
     },
     "codebase-design": {
       "source": "mattpocock",
       "path": "skills/engineering/codebase-design",
-      "base": "49dd158d1076134a641b33efb035946536778336",
+      "base": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       // Local: names the project's vocabulary file `CONTEXT.md`, this repo's convention (AGENTS.md),
       // where upstream renamed it `GLOSSARY.md`.
     },
     "explain-diff": {
       "source": "explain-diff-html",
       "path": "skills/explain-diff-html",
-      "base": "b3be771bde15d8012b781ca0b39739a2328f8887",
+      "base": "407d90d24843ca42e129fb5077591d19f7483f6f",
       // Local: renamed `explain-diff` (the directory and `name`), and user-invoked
       // (`disable-model-invocation: true`), since an explainer is asked for by hand.
       // `agents/openai.yaml` is this repo's own, keeping it user-invoked in Codex too.
@@ -52,7 +52,7 @@
     "grilling": {
       "source": "mattpocock",
       "path": "skills/productivity/grilling",
-      "base": "49dd158d1076134a641b33efb035946536778336",
+      "base": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
     },
     "pr": {
       "source": "mattpocock",
@@ -73,7 +73,7 @@
     "research": {
       "source": "mattpocock",
       "path": "skills/engineering/research",
-      "base": "49dd158d1076134a641b33efb035946536778336",
+      "base": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
       // Local: notes go to `RESEARCH-<topic>.md` at the repo root, a deliberate placeholder until
       // someone folds them into the real docs, and the agent reports the path back.
     },

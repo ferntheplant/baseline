@@ -64,7 +64,13 @@ export default defineConfig({
     // `overrides`. This block holds only what is particular to this repo. A project adds the
     // presets for what it uses; BASELINE.md's _Lint presets_ section lists them.
     extends: [core, vitestWithEffect, antiSlop],
-    ignorePatterns: IGNORE_PATTERNS,
+    // The explain-diff validator is a bundle upstream builds from its own source and this repo
+    // vendors as is: build output, which no lint finding could fix here. The leading `**` also
+    // matches its path through the `.claude` symlink.
+    ignorePatterns: [
+      ...IGNORE_PATTERNS,
+      "**/skills/explain-diff/scripts/validate-output.js",
+    ],
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     options: {
       maxWarnings: 0,
