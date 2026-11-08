@@ -126,6 +126,18 @@ Where both sides changed the same lines, the agent decides using the comment tha
 
 Each source's license is copied to [`.agents/licenses/`](./.agents/licenses/).
 
+## Kata
+
+Agent work is tracked in [Kata](https://www.katatracker.com/docs/). To bind a repo to its Kata project, run this once, then commit the `.kata.toml` that it writes:
+
+```bash
+kata init --project <name>
+```
+
+`.gitignore` already ignores `.kata.local.toml`, which holds the overrides for one machine.
+
+baseline itself does not commit its `.kata.toml`. A generated repo takes every file that baseline owns, so a committed binding would bind each generated repo to baseline's Kata project. baseline's own binding is in `.git/info/exclude` instead, so in a new clone of baseline, run `kata init --project baseline` again.
+
 ## Manual Forgejo settings
 
 The repo lives on [Forgejo](https://forgejo.org/), and CI runs there on Forgejo Actions. A GitHub copy, if there is one, is a read-only mirror of the Forgejo repo and needs none of this.
