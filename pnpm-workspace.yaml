@@ -17,11 +17,11 @@ savePrefix: ""
 catalog:
   "@commitlint/cli": 21.2.4
   "@commitlint/config-conventional": 21.2.4
-  "@effect/platform-node": 4.1.1
+  "@effect/platform-node": 4.1.2
   "@effect/tsgo": 0.51.1
-  "@effect/vitest": 4.1.1
+  "@effect/vitest": 4.1.2
   "@types/node": 24.19.2
-  effect: 4.1.1
+  effect: 4.1.2
   fallow: 3.38.1
   sherif: 1.13.0
   taze: 21.3.0
