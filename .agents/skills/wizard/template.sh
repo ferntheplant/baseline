@@ -89,13 +89,15 @@ confirm() {
   [[ "$reply" =~ ^[Yy] ]]
 }
 
-# _existing KEY: current value of KEY in ENV_FILE, if any, with write_env's single
-# quotes or a plain dotenv double-quoted value undone.
+# _existing KEY: current value of KEY in ENV_FILE, if any, with write_env's quotes
+# or a plain dotenv double-quoted value undone. It also undoes the '\'' escape that
+# an older write_env wrote.
 _existing() {
   [[ -f "$ENV_FILE" ]] || return 1
   local line value sq="'\\''"; line=$(grep -E "^${1}=" "$ENV_FILE" | tail -n1) || return 1
   value="${line#*=}"
   if [[ "$value" == \'*\' ]]; then value="${value:1:${#value}-2}"; value="${value//"$sq"/\'}"
+  elif [[ "$value" == \`*\` ]]; then value="${value:1:${#value}-2}"
   elif [[ "$value" == \"*\" ]]; then
     value="${value:1:${#value}-2}"
     [[ "$value" == *[\\\$\"]* ]] && return 1   # escapes, $ or ": can't decode safely; ask again
@@ -137,12 +139,27 @@ ask_secret() {
 # write_env KEY VALUE upserts KEY='VALUE' into ENV_FILE (replaces any existing
 # line) and sets $KEY. Idempotent. Creates ENV_FILE at mode 0600; writes through
 # a symlink and keeps an existing file's mode.
+#
+# Dotenv readers (dotenv, Node's --env-file) undo no shell escapes, so the value
+# is quoted with the first of ' " ` that it does not contain. A double-quoted
+# value must also have no \ or $, which a reader can expand. A value that no
+# quote fits, or that has a newline, is refused and nothing is written.
 write_env() {
-  local key="$1" value="$2" tmp sq="'\\''"
+  local key="$1" value="$2" tmp q=""
+  if [[ "$value" != *$'\n'* ]]; then
+    if [[ "$value" != *\'* ]]; then q="'"
+    elif [[ "$value" != *[\"\\\$]* ]]; then q='"'
+    elif [[ "$value" != *\`* ]]; then q='`'
+    fi
+  fi
+  if [[ -z "$q" ]]; then
+    printf '  %s✗ not written:%s %s has a newline, or all of '"'"' " `\n' "$YELLOW" "$RESET" "$key" >&2
+    return 1
+  fi
   [[ -e "$ENV_FILE" ]] || (umask 077 && : > "$ENV_FILE")
   tmp=$(mktemp)
   grep -vE "^${key}=" "$ENV_FILE" > "$tmp" || true
-  printf "%s='%s'\n" "$key" "${value//\'/$sq}" >> "$tmp"
+  printf '%s=%s%s%s\n' "$key" "$q" "$value" "$q" >> "$tmp"
   cat "$tmp" > "$ENV_FILE"
   rm -f "$tmp"
   printf -v "$key" '%s' "$value"

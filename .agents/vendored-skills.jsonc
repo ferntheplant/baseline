@@ -48,6 +48,13 @@
       // Local: renamed `explain-diff` (the directory and `name`), and user-invoked
       // (`disable-model-invocation: true`), since an explainer is asked for by hand.
       // `agents/openai.yaml` is this repo's own, keeping it user-invoked in Codex too.
+      // Local: the PR fetch drops the old `refs/explain/pr-<n>` and fetches with `+`, and says STOP
+      // when the fetch fails. Upstream's fetch refused a force-pushed head and went on with the old.
+      // Local: `html-template.html` has a Content-Security-Policy that runs only its two scripts
+      // (by hash) and the pinned Mermaid file. SKILL.md and references/validation.md say to keep it
+      // and the scripts unchanged. An injected `</pre><script>` that escaping missed cannot run.
+      // Local: the header of `scripts/validate-output.js` names upstream's repo, where its source
+      // (`src/validate-output.ts`) and `npm run build` are. This copy has only the bundle.
     },
     "grilling": {
       "source": "mattpocock",
@@ -82,6 +89,9 @@
       "path": "skills/engineering/wizard",
       "base": "49dd158d1076134a641b33efb035946536778336",
       // Local: one comment in `template.sh` reworded ("names of the secrets set this run").
+      // Local: `write_env` quotes a value with the first of ' " ` that it does not contain, and
+      // refuses a value that no quote fits. Upstream wrote shell's '\'' escape, which dotenv
+      // readers do not undo: Node's parseEnv read `it's` back as `it`. `_existing` reads all three.
     },
     "writing-for-agents": {
       "source": "mattpocock",

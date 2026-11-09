@@ -223,7 +223,11 @@ tree, so nothing you write can be committed by accident:
 ```bash
 work="$(mktemp -d)"
 echo "$work"   # write this path out in later steps
-git fetch origin "refs/pull/<n>/head:refs/explain/pr-<n>"       # pull request only
+# Pull request only. Drop the old ref, and fetch with "+" so a rebased or force-pushed head
+# replaces it. A failed fetch then leaves no ref, so nothing below can diff an old head.
+git update-ref -d refs/explain/pr-<n> 2>/dev/null
+git fetch origin "+refs/pull/<n>/head:refs/explain/pr-<n>" ||
+  echo "STOP: could not fetch the pull request head; do not draft from an old ref"
 pr_base="$(gh pr view <n> --json baseRefOid -q .baseRefOid)"    # the commit it opened against
 if [ -z "$pr_base" ] || ! git fetch origin "$pr_base"; then
   # No sha from gh, or the server refused it: diff from where the head left the base branch.
@@ -567,7 +571,9 @@ and an added line. Raw angle brackets are parsed as
 tags: a line such as `list.get<T>(index)`, a JSX `<Foo />`, or a plain `a < b`
 opens an unknown element that HTML5 never auto-closes, so it swallows the rest
 of the document and breaks the sections and table-of-contents anchors below it.
-Escaping also closes a self-XSS path when a diff carries `</pre><script>`.
+Escaping also closes a self-XSS path when a diff carries `</pre><script>`. The
+template's `Content-Security-Policy` is the second guard: it runs only the
+template's own scripts, so an injected script that escaping missed does not run.
 
 Quiz: five medium-difficulty multiple-choice questions that test design
 judgment and transfer, not recall. See Quiz design below.
@@ -678,6 +684,10 @@ scaffold per run. It carries:
 - A `table.vals` comparison table with `.yes` and `.no` cells.
 - The `.mermaid` container style and a theme-aware, non-blocking loader.
 - The quiz interaction script, which shuffles the options on every load.
+- A `Content-Security-Policy` meta tag that runs only the two template scripts
+  (by hash) and the pinned Mermaid file, and blocks every other request. Copy the
+  tag and both scripts unchanged. A script that differs by one byte from its
+  hash does not run. When you change a template script, update its hash.
 
 Each finished page carries its own copy of that scaffold, because the output must
 be self-contained. So a change to the template does not reach pages already

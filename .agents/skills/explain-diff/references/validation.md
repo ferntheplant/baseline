@@ -75,6 +75,11 @@ mistake fails instead of reporting on a page the script never opened.
   breaks the block; escaping lets `textContent` decode them back before Mermaid
   parses, so `<br/>` and `-->` survive.
 
+- The page keeps the template's `Content-Security-Policy` meta tag and its two
+  `<script>` blocks byte for byte, and adds no other `<script>`. Compare them
+  with `html-template.html`. The policy blocks any other script, so a raw end
+  tag that escaping missed cannot run code. A changed script stops running too.
+
 - The file is self-contained: CSS and JS inline, no external request except the
   Mermaid CDN when a Mermaid diagram is present. A source link is not an
   external request. It fetches nothing until a reader clicks it, so the page
