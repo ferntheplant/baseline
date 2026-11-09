@@ -91,7 +91,7 @@ confirm() {
 
 # _existing KEY: current value of KEY in ENV_FILE, if any, with write_env's quotes
 # or a plain dotenv double-quoted value undone. It also undoes the '\'' escape that
-# an older write_env wrote.
+# an older write_env wrote, and reads the backtick quotes of another older one.
 _existing() {
   [[ -f "$ENV_FILE" ]] || return 1
   local line value sq="'\\''"; line=$(grep -E "^${1}=" "$ENV_FILE" | tail -n1) || return 1
@@ -140,20 +140,21 @@ ask_secret() {
 # line) and sets $KEY. Idempotent. Creates ENV_FILE at mode 0600; writes through
 # a symlink and keeps an existing file's mode.
 #
-# Dotenv readers (dotenv, Node's --env-file) undo no shell escapes, so the value
-# is quoted with the first of ' " ` that it does not contain. A double-quoted
-# value must also have no \ or $, which a reader can expand. A value that no
-# quote fits, or that has a newline, is refused and nothing is written.
+# Two readers must get the value back unchanged: dotenv readers (dotenv, Node's
+# --env-file), which undo no shell escapes, and a shell that sources the file
+# (`set -a; . ./.env`), which expands $, ` and \ inside double quotes. So the
+# value is single-quoted when it has no ', and double-quoted when it has a ' but
+# no ", \, $ or `. Any other value, or one with a newline, is refused and
+# nothing is written. Never use backticks: a shell runs them as a command.
 write_env() {
   local key="$1" value="$2" tmp q=""
   if [[ "$value" != *$'\n'* ]]; then
     if [[ "$value" != *\'* ]]; then q="'"
-    elif [[ "$value" != *[\"\\\$]* ]]; then q='"'
-    elif [[ "$value" != *\`* ]]; then q='`'
+    elif [[ "$value" != *[\"\\\$\`]* ]]; then q='"'
     fi
   fi
   if [[ -z "$q" ]]; then
-    printf '  %s✗ not written:%s %s has a newline, or all of '"'"' " `\n' "$YELLOW" "$RESET" "$key" >&2
+    printf '  %s✗ not written:%s %s has a newline, or a '"'"' together with " \\ $ or `\n' "$YELLOW" "$RESET" "$key" >&2
     return 1
   fi
   [[ -e "$ENV_FILE" ]] || (umask 077 && : > "$ENV_FILE")

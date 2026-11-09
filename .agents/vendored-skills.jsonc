@@ -89,9 +89,10 @@
       "path": "skills/engineering/wizard",
       "base": "49dd158d1076134a641b33efb035946536778336",
       // Local: one comment in `template.sh` reworded ("names of the secrets set this run").
-      // Local: `write_env` quotes a value with the first of ' " ` that it does not contain, and
-      // refuses a value that no quote fits. Upstream wrote shell's '\'' escape, which dotenv
-      // readers do not undo: Node's parseEnv read `it's` back as `it`. `_existing` reads all three.
+      // Local: `write_env` single-quotes a value with no ', double-quotes a value with a ' but no
+      // " \ $ or `, and refuses any other value. Upstream wrote shell's '\'' escape, which dotenv
+      // readers do not undo: Node's parseEnv read `it's` back as `it`. The file must also be safe
+      // to source (`set -a; . ./.env`), so it never uses backticks or an expandable double quote.
     },
     "writing-for-agents": {
       "source": "mattpocock",
