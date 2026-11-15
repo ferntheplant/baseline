@@ -1,11 +1,16 @@
 // Skills copied from other repos and edited in place. Each entry records the upstream commit the
 // local copy was last merged from (`base`), so `/rebaseline skills` can tell a local edit from an
 // upstream change and three-way merge one into the other. A skill in `.agents/skills/` with no
-// entry here is this repo's own.
+// entry here is the maintainer's own.
 //
 // Every local edit gets a comment on its entry saying what changed and why: the next merge reads
 // those comments to decide which side of a conflict to keep. An edit with no comment reads as
 // drift, and the merge is free to take upstream's version over it.
+//
+// One repo maintains these skills and merges their upstream changes. It publishes the skills and
+// this file into each repo that ships them, so the copies and this file stay the same everywhere.
+// Make a change in the maintaining repo: the next publish replaces an edit made in a copy. Each
+// skill works inside a repo and as a global skill, so one copy serves both.
 {
   "sources": {
     "mattpocock": {
@@ -31,15 +36,16 @@
       "path": "skills/agent-browser",
       "base": "4b0e9f01fa8d214d39bbfe5391257640634fb9a0",
       // Local: the description says when to reach for it (checking a change in a browser) instead
-      // of listing upstream's every use; `mise.toml` installs the CLI, so the install line says
-      // so; the "Why agent-browser" sales pitch is cut.
+      // of listing upstream's every use; the "Why agent-browser" sales pitch is cut.
+      // Local: the install line runs the CLI from the checkout when the repo's `mise.toml`
+      // installs it, and the global install elsewhere, so the skill works in a repo and globally.
     },
     "codebase-design": {
       "source": "mattpocock",
       "path": "skills/engineering/codebase-design",
       "base": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
-      // Local: names the project's vocabulary file `CONTEXT.md`, this repo's convention (AGENTS.md),
-      // where upstream renamed it `GLOSSARY.md`.
+      // Local: names the project's vocabulary file `CONTEXT.md`, the name baseline's AGENTS.md and
+      // the global writing instructions use, where upstream renamed it `GLOSSARY.md`.
     },
     "explain-diff": {
       "source": "explain-diff-html",
@@ -47,7 +53,7 @@
       "base": "407d90d24843ca42e129fb5077591d19f7483f6f",
       // Local: renamed `explain-diff` (the directory and `name`), and user-invoked
       // (`disable-model-invocation: true`), since an explainer is asked for by hand.
-      // `agents/openai.yaml` is this repo's own, keeping it user-invoked in Codex too.
+      // `agents/openai.yaml` is this copy's own, keeping it user-invoked in Codex too.
       // Local: the PR fetch drops the old `refs/explain/pr-<n>` and fetches with `+`, and says STOP
       // when the fetch fails. Upstream's fetch refused a force-pushed head and went on with the old.
       // Local: `html-template.html` has a Content-Security-Policy that runs only its two scripts
@@ -67,15 +73,17 @@
       "base": "49dd158d1076134a641b33efb035946536778336",
       // Local: Blast Radius is named in "a few words", the widest impact, not one word; evidence
       // shows the exact test, with pseudocode only when no specific test applies; the vocabulary
-      // file is `CONTEXT.md`, this repo's convention, where upstream renamed it `GLOSSARY.md`.
+      // file is `CONTEXT.md`, the name baseline's AGENTS.md and the global writing instructions
+      // use, where upstream renamed it `GLOSSARY.md`.
     },
     "prototype": {
       "source": "mattpocock",
       "path": "skills/engineering/prototype",
       "base": "49dd158d1076134a641b33efb035946536778336",
       // Local: rewritten to state rules positively (the anti-pattern lists are gone, folded into
-      // the rules they negated), and a UI prototype runs as `vp run <name>`, a `package.json`
-      // script, per this repo's AGENTS.md.
+      // the rules they negated).
+      // Local: a UI prototype is a `package.json` script run with the project's own runner
+      // (`vp run <name>` in a Vite+ repo such as baseline), so the skill works outside Vite+ too.
     },
     "research": {
       "source": "mattpocock",

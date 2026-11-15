@@ -19,7 +19,7 @@ The two branches produce very different artifacts, so getting this wrong wastes 
 ## Rules that apply to both
 
 1. **Throwaway from day one, and clearly marked as such.** Locate the prototype code close to where it will actually be used (next to the module or page it's prototyping for) so context is obvious, and name it so a casual reader can see it's a prototype (e.g. `prototype` in the path or filename). Put throwaway UI routes where the project's routing convention already puts pages.
-2. **Trivial to run.** A UI prototype starts from one command: `vp run <name>`, a `package.json` script. A logic demo is a single HTML file the user double-clicks. Either way, no thinking required to start it.
+2. **Trivial to run.** A UI prototype starts from one command: a `package.json` script, run with the project's own runner (`vp run <name>` in a Vite+ repo). A logic demo is a single HTML file the user double-clicks. Either way, no thinking required to start it.
 3. **State lives in memory by default.** Persistence is the thing the prototype is _checking_, not something it should depend on. If the question explicitly involves a database, hit a scratch DB or a local file with a clear "PROTOTYPE, wipe me" name.
 4. **Build only what makes it runnable.** Tests, error handling beyond that, and abstractions wait for the real implementation; the walkthroughs or variant switching are how you verify it. The point is to learn something fast.
 5. **Surface the state.** After every action (logic) or on every variant switch (UI), print or render the full relevant state so the user can see what changed.

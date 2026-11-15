@@ -124,6 +124,8 @@ Some files here are copies of files maintained somewhere else, edited in place: 
 
 Where both sides changed the same lines, the agent decides using the comment that explains each local edit in the manifest, and it brings conflicts it can't settle that way to you. So an edit to a copied file also gets a comment on its manifest entry saying why; an edit with no comment looks like drift, and the next merge may take upstream's version over it.
 
+The skills arrive here already merged from their upstreams. One repo maintains them and publishes them, with their manifest, into baseline, so make a change to a skill there: the next publish replaces an edit made here. A repo generated from baseline takes skill updates with `/rebaseline`, like any other baseline file. `/rebaseline skills` is for a repo that maintains its own copies.
+
 Each source's license is copied to [`.agents/licenses/`](./.agents/licenses/).
 
 ## Kata

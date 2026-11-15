@@ -9,7 +9,7 @@ hidden: true
 
 Fast browser automation CLI for AI agents. Chrome/Chromium via CDP with accessibility-tree snapshots and compact `@eN` element refs.
 
-The repo's `mise.toml` installs `agent-browser`, so run it from inside the checkout. On a machine with no Chrome for it yet, run `agent-browser install` once.
+When the repo's `mise.toml` installs `agent-browser`, run it from inside the checkout; elsewhere, run the global install. On a machine with no Chrome for it yet, run `agent-browser install` once.
 
 ## Start here
 

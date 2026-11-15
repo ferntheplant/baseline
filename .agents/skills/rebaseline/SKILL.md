@@ -9,7 +9,8 @@ disable-model-invocation: true
 This repo carries copies of other repos' files and edits them in place:
 
 - **Baseline**: a repo generated from [baseline](https://github.com/ferntheplant/baseline) is a copy of all of it. `.baseline.jsonc` at its root records which baseline commit it last took. Baseline itself has no such file.
-- **Vendored skills**: `.agents/vendored-skills.jsonc` records, for each skill copied from another repo, its source and the commit it was last merged from.
+- **Vendored skills**: `.agents/vendored-skills.jsonc` records, for each skill copied from another repo, its source and the commit it was last merged from. A repo that keeps its agent config under `.scratch/` has `.scratch/vendored-skills.jsonc` instead. Its top-level `skillsDir` key names the folder of the local copies, such as `.scratch/skills`. Without the key, the folder is `.agents/skills`.
+- **Vendored files**: `.agents/vendored-files.jsonc` does the same for single files, keyed by local path. A file can have a different name and place here than upstream.
 
 That recorded commit is the **base**. Rebaselining is a three-way merge: the upstream changes from the base to the newest upstream commit, applied on top of the local copy. A local edit survives unless upstream changed the same lines, and each manifest's comments say why each local edit was made, which is what decides a conflict.
 
@@ -20,6 +21,7 @@ That recorded commit is the **base**. Rebaselining is a three-way merge: the ups
 | `init` | [Initialise](#initialise): record the base in a repo generated from baseline |
 | none, with `.baseline.jsonc` present | [Merge](#merge) baseline's changes |
 | `skills [<name>...]` | [Merge](#merge) upstream changes into every vendored skill, or only the named ones |
+| `files [<path>...]` | [Merge](#merge) upstream changes into every vendored file, or only the named ones |
 | `add <repo-url> <path> [<name>]` | [Add](#add) a vendored skill |
 
 With no argument and no `.baseline.jsonc`, ask which branch was meant. In a repo generated from baseline, merge baseline before the skills: baseline already carries the upstream skill changes it has taken, so the skills branch is left with only what baseline has not.
@@ -71,7 +73,7 @@ Baseline is `https://github.com/ferntheplant/baseline` at `main`, fetched as `re
 
 ## Merge
 
-There is one **entry** to merge for baseline: source path `.`, local path `.`, plus its excludes. For skills, each entry in `.agents/vendored-skills.jsonc` is one: its source path is `path`, and its local path is `.agents/skills/<name>`. Fetch every source the entries name, then run steps 1 to 5 for each entry.
+There is one **entry** to merge for baseline: source path `.`, local path `.`, plus its excludes. For skills, each entry in the skills manifest is one: its source path is `path`, and its local path is `<skillsDir>/<name>`. For files, each entry in `.agents/vendored-files.jsonc` is one: its source path is `path`, and its local path is the entry's key. Fetch every source the entries name, then run steps 1 to 5 for each entry.
 
 1. **Skip** an entry upstream has not touched since its base: `git diff --quiet <base> refs/rebaseline/<source> -- <path>`.
 2. **Apply**:
@@ -79,10 +81,16 @@ There is one **entry** to merge for baseline: source path `.`, local path `.`, p
    ```bash
    # a skill
    git diff --binary <base> refs/rebaseline/<source> --relative=<path> -- <path> |
-     git apply --3way --directory=.agents/skills/<name>
+     git apply --3way --directory=<skillsDir>/<name>
    # baseline
    git diff --binary <base> refs/rebaseline/baseline -- . ':(exclude)<path>'... | git apply --3way
+   # a file, whose local name can differ from upstream's
+   git show <base>:<path> > "$tmp/base"
+   git show refs/rebaseline/<source>:<path> > "$tmp/upstream"
+   git merge-file -L local -L base -L upstream <local path> "$tmp/base" "$tmp/upstream"
    ```
+
+   `git merge-file` writes conflict markers into the file and exits with the number of conflicts.
 
    Clean hunks land. Overlapping ones leave conflict markers, and `git status` lists their files as unmerged. When upstream deleted or renamed a file the repo also edited, `git apply` names the path and the hunk it could not place: that is a conflict too, resolved by hand. When `<path>` itself is gone upstream, the skill moved or was retired: find where it went with `git log -1 --stat refs/rebaseline/<source> -- <path>`, and ask the user before repointing `path`.
 
@@ -98,12 +106,12 @@ There is one **entry** to merge for baseline: source path `.`, local path `.`, p
 
 ## Add
 
-1. Fetch the source. If `sources` lacks it, add it with `repo`, `ref`, and `license`: the path of a copy of the upstream license, saved to `.agents/licenses/<source>.txt`.
+1. Fetch the source. If `sources` lacks it, add it with `repo`, `ref`, and `license`: the path of a copy of the upstream license, saved to `licenses/<source>.txt` next to the manifest.
 2. Copy the skill at the fetched commit, as a merge from an empty base:
 
    ```bash
    git diff --binary "$(git hash-object -t tree /dev/null)" refs/rebaseline/<source> --relative=<path> -- <path> |
-     git apply --index --directory=.agents/skills/<name>
+     git apply --index --directory=<skillsDir>/<name>
    ```
 
 3. Add its entry under `skills`, with `base` set to the fetched commit's full sha. When `<name>` differs from upstream's directory, set `name:` in its `SKILL.md` frontmatter to match, and comment that as a local edit.
@@ -111,7 +119,7 @@ There is one **entry** to merge for baseline: source path `.`, local path `.`, p
 ## Verify and hand off
 
 1. After a baseline merge, run `vp install`: it takes catalog changes and regenerates `pnpm-lock.yaml`.
-2. Run `vp run ready:agent` until it prints `ready: ok`. A failure the merge caused belongs to the merge: fix it, judging it minor or major the same way.
+2. In a repo generated from baseline, run `vp run ready:agent` until it prints `ready: ok`. In another repo, run its own checks. A failure the merge caused belongs to the merge: fix it, judging it minor or major the same way.
 3. Delete every ref fetched: `git update-ref -d refs/rebaseline/<source>`.
 4. Commit: `chore: rebaseline onto baseline <short sha>`, `chore: rebaseline skills`, or `chore: vendor the <name> skill`.
 5. Report, per entry: the upstream commits taken (one line each), the local edits kept, and each conflict with how it was resolved.
