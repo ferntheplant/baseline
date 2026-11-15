@@ -49,4 +49,3 @@ CLAUDE.md
 # fallow cache
 .fallow/
 .vitest/
-.kata.local.toml
